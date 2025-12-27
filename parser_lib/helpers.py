@@ -1,5 +1,5 @@
 from .io import load_json
-from .constants import LANGUAGE_FILES
+from .constants import LANGUAGE_FILES, ATTRIBUTE_TYPE
 
 def resolve_text(lang_table, text_id):
     if not text_id or str(text_id) == "0":
@@ -72,7 +72,6 @@ def resolve_tuning_items(weapon_id, weapon_basic, breakthrough_table, item_table
     steps = breakthrough.get("list", [])
     output = []
 
-    # Skip first lv1 step; start at lv20
     for step in steps[1:]:
         items = step.get("breakItemList", [])
         parts = []
@@ -100,3 +99,124 @@ def get_batk_values(level_template_id, weapon_upgrade_table):
         match = next((x for x in levels if x.get("weaponLv") == lvl), None)
         base_atks.append(str(match.get("baseAtk")) if match else "")
     return base_atks
+
+def get_gear_part_type(equip_data):
+    part_type = equip_data.get("partType")
+    return {0: "Armor", 1: "Gloves", 2: "Kit",}.get(part_type, "")
+
+def get_gear_region(equip_data):
+    domain_id = equip_data.get("domainId")
+    return {"domain_1": "Valley IV", "domain_2": "Wuling",}.get(domain_id, "")
+
+def resolve_gear_attributes_sections(equip_data):
+    gear_def = ""
+    pstat = pvalue = ""
+    sstat = svalue = ""
+    tstat = tvalue = ""
+
+    modifiers = equip_data.get("equipAttrModifiers", [])
+    for mod in modifiers:
+        attr_index = mod.get("attrIndex")
+        attr_type = mod.get("attrType")
+        attr_values = mod.get("attrValues", [])
+
+        if not attr_values:
+            continue
+
+        values_str = ", ".join(str(v) for v in attr_values)
+
+        if attr_index == 0:
+            gear_def = values_str
+        else:
+            stat_name = ATTRIBUTE_TYPE.get(attr_type, "")
+            if not stat_name:
+                continue
+
+            if attr_index == 1:
+                pstat = stat_name
+                pvalue = values_str
+            elif attr_index == 2:
+                sstat = stat_name
+                svalue = values_str
+            elif attr_index == 3:
+                tstat = stat_name
+                tvalue = values_str
+
+    return gear_def, pstat, pvalue, sstat, svalue, tstat, tvalue
+
+def resolve_artifice_bool(pvalue, svalue, tvalue):
+    def is_same(val):
+        if not val:
+            return True
+        numbers = [v.strip() for v in val.split(",")]
+        return len(set(numbers)) == 1
+
+    sections = [pvalue, svalue, tvalue]
+
+    for sec in sections:
+        if not is_same(sec):
+            return "yes"
+    return "no"
+
+def format_stat_value(value_str, artifice_bool):
+    if not value_str:
+        return ""
+
+    numbers = [v.strip() for v in value_str.split(",")]
+
+    if artifice_bool == "no" and len(set(numbers)) == 1:
+        numbers = [numbers[0]]
+
+    formatted = []
+    for v in numbers:
+        try:
+            num = float(v)
+            if 0 < num < 1:
+                formatted.append(f"+{num * 100:.1f}%")
+            else:
+                rounded = round(num, 1)
+                sign = '+' if rounded > 0 else '-' if rounded < 0 else ''
+                formatted_val = f"{int(abs(rounded))}" if rounded.is_integer() else f"{abs(rounded)}"
+                formatted.append(f"{sign}{formatted_val}")
+        except ValueError:
+            formatted.append(v)
+
+    return ", ".join(formatted)
+
+def resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language):
+    gear_set = ""
+    set_effect = ""
+
+    for suit_key, suit_data in equip_suit.items():
+        equip_list = suit_data.get("equipList", [])
+        if gear_id in equip_list:
+            suit_name_id = suit_data.get("list", [{}])[0].get("suitName", {}).get("id")
+            gear_set = language["en"].get(suit_name_id, "")
+
+            skill_id = suit_data.get("list", [{}])[0].get("skillID", "")
+            skill_entry = skill_patch.get(skill_id, {})
+            bundle = skill_entry.get("SkillPatchDataBundle", [])
+            if bundle:
+                desc_id = bundle[0].get("description", {}).get("id")
+                set_effect = language["en"].get(desc_id, "")
+            break
+
+    return gear_set, set_effect
+
+def resolve_gear_recipe(gear_id, equip_formula, item_table, language, lang="en"):
+    recipe_parts = []
+
+    for formula in equip_formula.values():
+        if formula.get("outcomeEquipId") == gear_id:
+            cost_ids = formula.get("costItemId", [])
+            cost_nums = formula.get("costItemNum", [])
+
+            for item_id, count in zip(cost_ids, cost_nums):
+                item_entry = item_table.get(item_id, {})
+                name_id = item_entry.get("name", {}).get("id")
+                item_name = language[lang].get(name_id, "")
+                if item_name:
+                    recipe_parts.append(f"{{{{I|{item_name}|{count}}}}}")
+            break
+
+    return " ".join(recipe_parts)
