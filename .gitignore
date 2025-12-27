@@ -1,3 +1,5 @@
 input/*.json
 
 output/*.txt
+
+**/__pycache__/
