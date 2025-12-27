@@ -15,6 +15,11 @@ SKILL_PATCH = "SkillPatchTable.json"
 WEAPON_BREAKTHROUGH = "WeaponBreakThroughTemplateTable.json"
 WEAPON_UPGRADE = "WeaponUpgradeTemplateTable.json"
 SYSTEM_JUMP = "SystemJumpTable.json"
+EQUIP_FORMULA = "EquipFormulaTable.json"
+EQUIP_PACK_FORMULA = "EquipPackFormulaTable.json"
+EQUIP_PACK = "EquipPackTable.json"
+EQUIP_SUIT = "EquipSuitTable.json"
+EQUIP_TABLE = "EquipTable.json"
 
 
 def build_paths(input_dir: str) -> dict[str, str]:
@@ -33,4 +38,9 @@ def build_paths(input_dir: str) -> dict[str, str]:
         "weapon_breakthrough": os.path.join(input_dir, WEAPON_BREAKTHROUGH),
         "weapon_upgrade": os.path.join(input_dir, WEAPON_UPGRADE),
         "system_jump": os.path.join(input_dir, SYSTEM_JUMP),
+        "equip_formula": os.path.join(input_dir, EQUIP_FORMULA),
+        "equip_pack_formula": os.path.join(input_dir, EQUIP_PACK_FORMULA),
+        "equip_pack": os.path.join(input_dir, EQUIP_PACK),
+        "equip_suit": os.path.join(input_dir, EQUIP_SUIT),
+        "equip_table": os.path.join(input_dir, EQUIP_TABLE),
     }
