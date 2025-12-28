@@ -2,6 +2,7 @@ import parser_lib.io as io
 import parser_lib.helpers as helpers
 import parser_lib.game_files as game_files
 import parser_lib.constants as const
+import parser_lib.format_text as format_text
 import os
 
 # Output file
@@ -16,6 +17,7 @@ equip_suit = io.load_json(paths["equip_suit"])
 equip_table = io.load_json(paths["equip_table"])
 system_jump_table = io.load_json(paths["system_jump"])
 skill_patch = io.load_json(paths["skill_patch"])
+attribute_filter = io.load_json(paths["attribute_filter"])
 
 # Load language files
 language = io.load_languages(const.INPUT_DIR)
@@ -56,10 +58,11 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
 
         # Gear set and effect
         gear_set, set_effect = helpers.resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language)
+        set_effect_formatted = format_text.efdb_format(set_effect)
 
         # Gear base and artificed stats
-        gear_def, gear_pstat, gear_pvalue, gear_sstat, gear_svalue, gear_tstat, gear_tvalue = helpers.resolve_gear_attributes_sections(gear_data)
-        gear_artifice = helpers.resolve_artifice_bool(gear_pvalue, gear_svalue, gear_tvalue)
+        (gear_def, gear_pstat, gear_pvalue, p_enhanced, gear_sstat, gear_svalue, s_enhanced, gear_tstat, gear_tvalue, t_enhanced) = helpers.resolve_gear_attributes_sections(gear_data, attribute_filter, language)
+        gear_artifice = helpers.resolve_artifice_bool(p_enhanced, s_enhanced, t_enhanced)
         gear_def = helpers.format_stat_value(gear_def, gear_artifice)
         gear_pvalue = helpers.format_stat_value(gear_pvalue, gear_artifice)
         gear_svalue = helpers.format_stat_value(gear_svalue, gear_artifice)
@@ -89,7 +92,7 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
 }}}}
 '''{gear_name}''' is a {{{{gear|{rarity}|{gear_type}}}}}gear item.
 
-{{Item description|{desc}|{deco_desc}}}
+{{{{Item description|{desc}|{deco_desc}}}}}
 
 ==Stats==
 {{{{Gear data
@@ -100,8 +103,8 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
 |svalue = {gear_svalue}
 |tstat = {gear_tstat}
 |tvalue = {gear_tvalue}
-|setname = [[{gear_set}]]
-|seteffect = {set_effect}
+|setname = {gear_set}
+|seteffect = {set_effect_formatted}
 |recipe = {gear_recipe}
 }}}}
 

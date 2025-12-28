@@ -1,5 +1,6 @@
 from .io import load_json
 from .constants import LANGUAGE_FILES, ATTRIBUTE_TYPE
+import re
 
 def resolve_text(lang_table, text_id):
     if not text_id or str(text_id) == "0":
@@ -108,54 +109,84 @@ def get_gear_region(equip_data):
     domain_id = equip_data.get("domainId")
     return {"domain_1": "Valley IV", "domain_2": "Wuling",}.get(domain_id, "")
 
-def resolve_gear_attributes_sections(equip_data):
+def resolve_gear_attributes_sections(equip_data, attribute_filter, language, lang="en"):
     gear_def = ""
+
     pstat = pvalue = ""
     sstat = svalue = ""
     tstat = tvalue = ""
 
-    modifiers = equip_data.get("equipAttrModifiers", [])
-    for mod in modifiers:
-        attr_index = mod.get("attrIndex")
+    p_enhanced = []
+    s_enhanced = []
+    t_enhanced = []
+
+    base_def = equip_data.get("displayBaseAttrModifier")
+    if base_def and base_def.get("attrType") == 3:
+        val = base_def.get("attrValue")
+        if val is not None:
+            gear_def = str(val)
+
+    modifiers = equip_data.get("displayAttrModifiers", [])
+
+    filter_list = attribute_filter.get("equipExtraAttr", {}).get("list", [])
+
+    for idx, mod in enumerate(modifiers):
         attr_type = mod.get("attrType")
-        attr_values = mod.get("attrValues", [])
+        base_val = mod.get("attrValue")
+        enhanced_vals = mod.get("enhancedAttrValues", [])
+        composite_attr = mod.get("compositeAttr", "")
 
-        if not attr_values:
-            continue
+        if "DamageTakenScalar" in composite_attr or attr_type in (4, 5, 6, 7):
+            if base_val is not None:
+                base_val = 1 - base_val
+            enhanced_vals = [1 - v for v in enhanced_vals]
 
-        values_str = ", ".join(str(v) for v in attr_values)
+        values = []
+        if base_val is not None:
+            values.append(str(base_val))
+        values.extend(str(v) for v in enhanced_vals)
+        values_str = ", ".join(values)
 
-        if attr_index == 0:
-            gear_def = values_str
+        stat_name = ""
+
+        if attr_type == 0:
+            for entry in filter_list:
+                if (
+                    entry.get("attributeType") == 0
+                    and entry.get("compositeAttr") == composite_attr
+                ):
+                    name_id = entry.get("name", {}).get("id")
+                    stat_name = resolve_text(language[lang], name_id)
+                    break
         else:
             stat_name = ATTRIBUTE_TYPE.get(attr_type, "")
-            if not stat_name:
-                continue
 
-            if attr_index == 1:
-                pstat = stat_name
-                pvalue = values_str
-            elif attr_index == 2:
-                sstat = stat_name
-                svalue = values_str
-            elif attr_index == 3:
-                tstat = stat_name
-                tvalue = values_str
+        if not stat_name:
+            continue
 
-    return gear_def, pstat, pvalue, sstat, svalue, tstat, tvalue
+        if idx == 0:
+            pstat = stat_name
+            pvalue = values_str
+            p_enhanced = enhanced_vals
+        elif idx == 1:
+            sstat = stat_name
+            svalue = values_str
+            s_enhanced = enhanced_vals
+        elif idx == 2:
+            tstat = stat_name
+            tvalue = values_str
+            t_enhanced = enhanced_vals
 
-def resolve_artifice_bool(pvalue, svalue, tvalue):
-    def is_same(val):
-        if not val:
-            return True
-        numbers = [v.strip() for v in val.split(",")]
-        return len(set(numbers)) == 1
+    return (
+        gear_def,
+        pstat, pvalue, p_enhanced,
+        sstat, svalue, s_enhanced,
+        tstat, tvalue, t_enhanced,
+    )
 
-    sections = [pvalue, svalue, tvalue]
-
-    for sec in sections:
-        if not is_same(sec):
-            return "yes"
+def resolve_artifice_bool(p_enhanced, s_enhanced, t_enhanced):
+    if p_enhanced or s_enhanced or t_enhanced:
+        return "yes"
     return "no"
 
 def format_stat_value(value_str, artifice_bool):
@@ -171,36 +202,67 @@ def format_stat_value(value_str, artifice_bool):
     for v in numbers:
         try:
             num = float(v)
+
             if 0 < num < 1:
-                formatted.append(f"+{num * 100:.1f}%")
+                formatted.append(f"+{round(num * 100, 1)}%")
             else:
                 rounded = round(num, 1)
                 sign = '+' if rounded > 0 else '-' if rounded < 0 else ''
-                formatted_val = f"{int(abs(rounded))}" if rounded.is_integer() else f"{abs(rounded)}"
+                abs_val = abs(rounded)
+                formatted_val = (
+                    str(int(abs_val)) if abs_val.is_integer() else str(abs_val)
+                )
                 formatted.append(f"{sign}{formatted_val}")
         except ValueError:
             formatted.append(v)
 
     return ", ".join(formatted)
 
-def resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language):
+def resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language, lang="en"):
     gear_set = ""
     set_effect = ""
 
     for suit_key, suit_data in equip_suit.items():
         equip_list = suit_data.get("equipList", [])
-        if gear_id in equip_list:
-            suit_name_id = suit_data.get("list", [{}])[0].get("suitName", {}).get("id")
-            gear_set = language["en"].get(suit_name_id, "")
+        if gear_id not in equip_list:
+            continue
 
-            skill_id = suit_data.get("list", [{}])[0].get("skillID", "")
-            skill_entry = skill_patch.get(skill_id, {})
-            bundle = skill_entry.get("SkillPatchDataBundle", [])
-            if bundle:
-                desc_id = bundle[0].get("description", {}).get("id")
-                set_effect = language["en"].get(desc_id, "")
+        suit_name_id = suit_data.get("list", [{}])[0].get("suitName", {}).get("id")
+        raw_gear_set = language[lang].get(suit_name_id, "")
+        gear_set = f"[[{raw_gear_set}]]" if raw_gear_set else ""
+        skill_id = suit_data.get("list", [{}])[0].get("skillID", "")
+        skill_entry = skill_patch.get(skill_id, {})
+        bundle = skill_entry.get("SkillPatchDataBundle", [])
+        if not bundle:
             break
 
+        desc_id = bundle[0].get("description", {}).get("id")
+        desc_text = language[lang].get(desc_id, "")
+        blackboard = {bb["key"]: bb["value"] for bb in bundle[0].get("blackboard", []) if "key" in bb}
+
+        def repl(match):
+            sign = match.group("sign") or ""
+            expr = match.group("expr")
+            fmt = match.group("fmt")
+            expr_eval = expr
+            for key, val in blackboard.items():
+                expr_eval = re.sub(rf"\b{re.escape(key)}\b", str(val), expr_eval)
+            try:
+                result = eval(expr_eval)
+            except Exception:
+                return match.group(0)
+
+            if fmt == "0%":
+                val_num = result * 100
+                val_str = f"{int(round(val_num))}%"
+            else:
+                val_str = f"{int(round(result))}" if float(result).is_integer() else f"{result:.1f}"
+            return f"{sign}{val_str}"
+
+        pattern = r"(?P<sign>[+-]?)\{(?P<expr>[^{}:]+)(?::(?P<fmt>0%?))?\}"
+        desc_text = re.sub(pattern, repl, desc_text)
+        set_effect = desc_text
+        break
     return gear_set, set_effect
 
 def resolve_gear_recipe(gear_id, equip_formula, item_table, language, lang="en"):

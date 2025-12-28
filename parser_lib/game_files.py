@@ -20,6 +20,8 @@ EQUIP_PACK_FORMULA = "EquipPackFormulaTable.json"
 EQUIP_PACK = "EquipPackTable.json"
 EQUIP_SUIT = "EquipSuitTable.json"
 EQUIP_TABLE = "EquipTable.json"
+ATTRIBUTE_SHOW = "AttributeShowConfigTable.json"
+ATTRIBUTE_FILTER = "AttributeFilterTable.json"
 
 
 def build_paths(input_dir: str) -> dict[str, str]:
@@ -43,4 +45,6 @@ def build_paths(input_dir: str) -> dict[str, str]:
         "equip_pack": os.path.join(input_dir, EQUIP_PACK),
         "equip_suit": os.path.join(input_dir, EQUIP_SUIT),
         "equip_table": os.path.join(input_dir, EQUIP_TABLE),
+        "attribute_show": os.path.join(input_dir, ATTRIBUTE_SHOW),
+        "attribute_filter": os.path.join(input_dir, ATTRIBUTE_FILTER),
     }
