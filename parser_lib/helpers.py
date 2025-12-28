@@ -1,5 +1,6 @@
 from .io import load_json
 from .constants import LANGUAGE_FILES, ATTRIBUTE_TYPE
+import re
 
 def resolve_text(lang_table, text_id):
     if not text_id or str(text_id) == "0":
@@ -183,24 +184,50 @@ def format_stat_value(value_str, artifice_bool):
 
     return ", ".join(formatted)
 
-def resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language):
+def resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language, lang="en"):
     gear_set = ""
     set_effect = ""
 
     for suit_key, suit_data in equip_suit.items():
         equip_list = suit_data.get("equipList", [])
-        if gear_id in equip_list:
-            suit_name_id = suit_data.get("list", [{}])[0].get("suitName", {}).get("id")
-            gear_set = language["en"].get(suit_name_id, "")
+        if gear_id not in equip_list:
+            continue
 
-            skill_id = suit_data.get("list", [{}])[0].get("skillID", "")
-            skill_entry = skill_patch.get(skill_id, {})
-            bundle = skill_entry.get("SkillPatchDataBundle", [])
-            if bundle:
-                desc_id = bundle[0].get("description", {}).get("id")
-                set_effect = language["en"].get(desc_id, "")
+        suit_name_id = suit_data.get("list", [{}])[0].get("suitName", {}).get("id")
+        gear_set = language[lang].get(suit_name_id, "")
+        skill_id = suit_data.get("list", [{}])[0].get("skillID", "")
+        skill_entry = skill_patch.get(skill_id, {})
+        bundle = skill_entry.get("SkillPatchDataBundle", [])
+        if not bundle:
             break
 
+        desc_id = bundle[0].get("description", {}).get("id")
+        desc_text = language[lang].get(desc_id, "")
+        blackboard = {bb["key"]: bb["value"] for bb in bundle[0].get("blackboard", []) if "key" in bb}
+
+        def repl(match):
+            sign = match.group("sign") or ""
+            expr = match.group("expr")
+            fmt = match.group("fmt")
+            expr_eval = expr
+            for key, val in blackboard.items():
+                expr_eval = re.sub(rf"\b{re.escape(key)}\b", str(val), expr_eval)
+            try:
+                result = eval(expr_eval)
+            except Exception:
+                return match.group(0)
+
+            if fmt == "0%":
+                val_num = result * 100
+                val_str = f"{int(round(val_num))}%"
+            else:
+                val_str = f"{int(round(result))}" if float(result).is_integer() else f"{result:.1f}"
+            return f"{sign}{val_str}"
+
+        pattern = r"(?P<sign>[+-]?)\{(?P<expr>[^{}:]+)(?::(?P<fmt>0%?))?\}"
+        desc_text = re.sub(pattern, repl, desc_text)
+        set_effect = desc_text
+        break
     return gear_set, set_effect
 
 def resolve_gear_recipe(gear_id, equip_formula, item_table, language, lang="en"):

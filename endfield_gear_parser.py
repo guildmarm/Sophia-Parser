@@ -2,6 +2,7 @@ import parser_lib.io as io
 import parser_lib.helpers as helpers
 import parser_lib.game_files as game_files
 import parser_lib.constants as const
+import parser_lib.format_text as format_text
 import os
 
 # Output file
@@ -56,6 +57,7 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
 
         # Gear set and effect
         gear_set, set_effect = helpers.resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language)
+        set_effect_formatted = format_text.efdb_format(set_effect)
 
         # Gear base and artificed stats
         gear_def, gear_pstat, gear_pvalue, gear_sstat, gear_svalue, gear_tstat, gear_tvalue = helpers.resolve_gear_attributes_sections(gear_data)
@@ -101,7 +103,7 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
 |tstat = {gear_tstat}
 |tvalue = {gear_tvalue}
 |setname = [[{gear_set}]]
-|seteffect = {set_effect}
+|seteffect = {set_effect_formatted}
 |recipe = {gear_recipe}
 }}}}
 
