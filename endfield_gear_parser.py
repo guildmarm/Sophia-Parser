@@ -59,6 +59,7 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
         # Gear set and effect
         gear_set, set_effect = helpers.resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language)
         set_effect_formatted = format_text.efdb_format(set_effect)
+        gear_setname = f"[[{gear_set}]]" if gear_set else ""
 
         # Gear base and artificed stats
         (gear_def, gear_pstat, gear_pvalue, p_enhanced, gear_sstat, gear_svalue, s_enhanced, gear_tstat, gear_tvalue, t_enhanced) = helpers.resolve_gear_attributes_sections(gear_data, attribute_filter, language)
@@ -103,7 +104,7 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
 |svalue = {gear_svalue}
 |tstat = {gear_tstat}
 |tvalue = {gear_tvalue}
-|setname = {gear_set}
+|setname = {gear_setname}
 |seteffect = {set_effect_formatted}
 |recipe = {gear_recipe}
 }}}}

@@ -228,8 +228,7 @@ def resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language, lang
             continue
 
         suit_name_id = suit_data.get("list", [{}])[0].get("suitName", {}).get("id")
-        raw_gear_set = language[lang].get(suit_name_id, "")
-        gear_set = f"[[{raw_gear_set}]]" if raw_gear_set else ""
+        gear_set = language[lang].get(suit_name_id, "")
         skill_id = suit_data.get("list", [{}])[0].get("skillID", "")
         skill_entry = skill_patch.get(skill_id, {})
         bundle = skill_entry.get("SkillPatchDataBundle", [])
