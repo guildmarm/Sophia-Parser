@@ -18,6 +18,7 @@ LANGUAGE_FILES = {
 }
 
 ATTRIBUTE_TYPE = {
+    0: "Level",
     1: "HP",
     2: "Attack",
     3: "Defense",
