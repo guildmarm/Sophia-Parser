@@ -281,3 +281,108 @@ def resolve_gear_recipe(gear_id, equip_formula, item_table, language, lang="en")
             break
 
     return " ".join(recipe_parts)
+
+def resolve_gear_sources_from_formula(gear_id, equip_formula, item_table, system_jump_table, language, lang="en"):
+    for formula in equip_formula.values():
+        if formula.get("outcomeEquipId") != gear_id:
+            continue
+
+        formula_id = formula.get("formulaId")
+        if not formula_id:
+            return ""
+
+        formula_item = item_table.get(formula_id)
+        if not formula_item:
+            return ""
+
+        source_ids = formula_item.get("obtainWayIds", [])
+
+        sources = []
+        for oid in source_ids:
+            entry = system_jump_table.get(oid)
+            if not entry:
+                continue
+            desc_id = entry.get("desc", {}).get("id")
+            localized_desc = resolve_text(language[lang], desc_id)
+            if localized_desc:
+                sources.append(localized_desc)
+
+        if not sources:
+            return ""
+
+        if len(sources) == 1:
+            return sources[0]
+
+        return "\n".join(f"*{s}" for s in sources)
+
+    return ""
+
+def build_gear_set_lines(equip_table, item_table, equip_suit, language, lang="en"):
+    gear_sets = {}
+
+    for gear_id, gear_data in equip_table.items():
+        item_data = item_table.get(gear_id)
+        if not item_data:
+            continue
+
+        gear_set, _ = resolve_gear_set_and_effect(gear_id, equip_suit, {}, language, lang=lang)
+        if not gear_set:
+            continue
+
+        gear_name = sanitize_name(resolve_text(language[lang], item_data.get("name", {}).get("id")))
+        rarity = item_data.get("rarity", 0)
+        gear_type = get_gear_part_type(gear_data)
+
+        if gear_set not in gear_sets:
+            gear_sets[gear_set] = []
+
+        gear_sets[gear_set].append((rarity, gear_type, gear_name))
+
+    lines = []
+    type_order = {"Armor": 0, "Gloves": 1, "Kit": 2}
+
+    for set_name, items in sorted(gear_sets.items()):
+        sorted_items = sorted(items, key=lambda x: (x[0], type_order.get(x[1], 99), x[2]))
+        item_strs = [f"{{{{Gear Icon|{name}|{rarity}}}}}" for rarity, _, name in sorted_items]
+        line = f"| {set_name} = {' '.join(item_strs)}"
+        lines.append(line)
+
+    return "\n".join(lines)
+
+def build_gear_nav_lists(equip_table, item_table, language, lang="en"):
+    armor_list = []
+    glove_list = []
+    kit_list = []
+
+    temp_armor = []
+    temp_glove = []
+    temp_kit = []
+
+    for gear_id, gear_data in equip_table.items():
+        item_data = item_table.get(gear_id)
+        if not item_data:
+            continue
+
+        name_id = item_data.get("name", {}).get("id")
+        gear_name = resolve_text(language[lang], name_id)
+        rarity = item_data.get("rarity", 0)
+
+        entry_text = f"{{{{Item Icon|{gear_name}|{rarity}}}}}"
+
+        gear_type = get_gear_part_type(gear_data)
+        if gear_type == "Armor":
+            temp_armor.append((rarity, gear_name, entry_text))
+        elif gear_type == "Gloves":
+            temp_glove.append((rarity, gear_name, entry_text))
+        elif gear_type == "Kit":
+            temp_kit.append((rarity, gear_name, entry_text))
+
+    armor_list = [e[2] for e in sorted(temp_armor, key=lambda x: (x[0], x[1]))]
+    glove_list = [e[2] for e in sorted(temp_glove, key=lambda x: (x[0], x[1]))]
+    kit_list = [e[2] for e in sorted(temp_kit, key=lambda x: (x[0], x[1]))]
+
+    gear_armor = " ".join(armor_list)
+    gear_glove = " ".join(glove_list)
+    gear_kit = " ".join(kit_list)
+
+    return gear_armor, gear_glove, gear_kit
