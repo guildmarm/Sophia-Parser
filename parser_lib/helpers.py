@@ -475,7 +475,7 @@ def build_weapon_nav_lists(weapon_basic, item_table, language, lang="en"):
         weapon_name = resolve_text(language[lang], name_id)
         rarity = item_data.get("rarity", 0)
 
-        entry_text = f"* {{Navitem|{weapon_name}|{rarity}}}"
+        entry_text = f"* {{{{Navitem|{weapon_name}|{rarity}}}}}"
 
         weapon_type = get_weapon_type(weapon_id)
         if weapon_type == "Sword":
