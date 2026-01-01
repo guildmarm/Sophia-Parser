@@ -22,6 +22,8 @@ EQUIP_SUIT = "EquipSuitTable.json"
 EQUIP_TABLE = "EquipTable.json"
 ATTRIBUTE_SHOW = "AttributeShowConfigTable.json"
 ATTRIBUTE_FILTER = "AttributeFilterTable.json"
+CHARACTER_TABLE = "CharacterTable.json"
+CHARACTER_GROWTH = "CharGrowthTable.json"
 
 
 def build_paths(input_dir: str) -> dict[str, str]:
@@ -47,4 +49,6 @@ def build_paths(input_dir: str) -> dict[str, str]:
         "equip_table": os.path.join(input_dir, EQUIP_TABLE),
         "attribute_show": os.path.join(input_dir, ATTRIBUTE_SHOW),
         "attribute_filter": os.path.join(input_dir, ATTRIBUTE_FILTER),
+        "character_table": os.path.join(input_dir, CHARACTER_TABLE),
+        "character_growth": os.path.join(input_dir, CHARACTER_GROWTH),
     }

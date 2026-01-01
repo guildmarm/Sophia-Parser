@@ -2,7 +2,7 @@ import re
 
 # Text that uses the {{Color}} template
 BA_VUP = re.compile(r"<@ba\.vup>(.*?)</>")
-BA_POISE = re.compile(r"<@ba\.poise>(.*?)</>") # Stagger
+BA_POISE = re.compile(r"<@ba\.poise>(.*?)</>")
 BA_KEY = re.compile(r"<@ba\.key>(.*?)</>")
 BA_HEAL = re.compile(r"<@ba\.heal>(.*?)</>")
 BA_INFO = re.compile(r"<@ba\.info>(.*?)</>")
@@ -69,7 +69,7 @@ def efdb_format(text: str) -> str:
 
     # Text that uses the {{Color}} template
     text = BA_VUP.sub(r"{{Color|\1|1d}}", text)
-    text = BA_POISE.sub(r"{{Color|\1|2}}", text) # Stagger
+    text = BA_POISE.sub(r"{{Color|\1|2}}", text)
     text = BA_KEY.sub(r"{{Color|\1|7}}", text)
     text = BA_HEAL.sub(r"{{Color|\1|1c}}", text)
     text = BA_INFO.sub(r"{{Color|\1|9}}", text)
@@ -79,6 +79,75 @@ def efdb_format(text: str) -> str:
     text = BA_FIRE.sub(r"{{Color|\1|3}}", text) # Heat Damage
     text = BA_NATUR.sub(r"{{Color|\1|5}}", text) # Nature Damage
     text = BA_ETHER.sub(r"{{Color|\1|1e}}", text) # Aether Damage
+
+    # Text that uses the {{Glossary}} template
+    text = BA_LASTCOMBO.sub(r"{{G|Final Strike|\1}}", text)
+    text = BA_POISEKNOT.sub(r"{{G|Stagger Node|\1}}", text)
+    text = BA_RETURN.sub(r"{{G|SP Return|\1}}", text)
+    text = BA_DOT.sub(r"{{G|DMG Over Time|\1}}", text)
+    text = BA_STATUSLEVEL.sub(r"{{G|Status Level|\1}}", text)
+    text = BA_CONSUME.sub(r"{{G|Debuff Consumption|\1}}", text)
+    text = BA_PHYSICALSTATUS.sub(r"{{G|Physical Status|\1}}", text)
+    text = BA_NOGUARD.sub(r"{{G|Vulnerable|\1}}", text)
+    text = BA_AIRBORNE.sub(r"{{G|Lift|\1}}", text)
+    text = BA_KNOCKDOWN.sub(r"{{G|Knock Down|\1}}", text)
+    text = BA_CRUSH.sub(r"{{G|Crush|\1}}", text)
+    text = BA_FRACTURE.sub(r"{{G|Breach|\1}}", text)
+    text = BA_SPELLINFLICT.sub(r"{{G|Arts Infliction|\1}}", text)
+    text = BA_FIREINFLICT.sub(r"{{G|Heat Infliction|\1}}", text)
+    text = BA_PULSEINFLICT.sub(r"{{G|Electric Infliction|\1}}", text)
+    text = BA_CRYSTINFLICT.sub(r"{{G|Cryo Infliction|\1}}", text)
+    text = BA_NATURALINFLICT.sub(r"{{G|Nature Infliction|\1}}", text)
+    text = BA_SPELLSTATUS.sub(r"{{G|Arts Reaction|\1}}", text)
+    text = BA_BURNING.sub(r"{{G|Combustion|\1}}", text)
+    text = BA_CONDUCT.sub(r"{{G|Electrification|\1}}", text)
+    text = BA_FROZEN.sub(r"{{G|Solidification|\1}}", text)
+    text = BA_CORRUPT.sub(r"{{G|Corrosion|\1}}", text)
+    text = BA_SPELLBURST.sub(r"{{G|Arts Burst|\1}}", text)
+    text = BA_FIREBURST.sub(r"{{G|Heat Burst|\1}}", text)
+    text = BA_PULSEBURST.sub(r"{{G|Electric Burst|\1}}", text)
+    text = BA_CRYSTBURST.sub(r"{{G|Cryo Burst|\1}}", text)
+    text = BA_NATURALBURST.sub(r"{{G|Nature Burst|\1}}", text)
+    text = BA_ENHANCE.sub(r"{{G|Amp|\1}}", text)
+    text = BA_SPELLENHANCE.sub(r"{{G|Arts Amp|\1}}", text)
+    text = BA_FIREENHANCE.sub(r"{{G|Heat Amp|\1}}", text)
+    text = BA_PULSEENHANCE.sub(r"{{G|Electric Amp|\1}}", text)
+    text = BA_CRYSTENHANCE.sub(r"{{G|Cryo Amp|\1}}", text)
+    text = BA_NATURALENHANCE.sub(r"{{G|Nature Amp|\1}}", text)
+    text = BA_VULNERABLE.sub(r"{{G|Susceptible|\1}}", text)
+    text = BA_PHYSICALVUL.sub(r"{{G|Physical Susceptibility|\1}}", text)
+    text = BA_SPELLVUL.sub(r"{{G|Arts Susceptibility|\1}}", text)
+    text = BA_FIREVUL.sub(r"{{G|Heat Susceptibility|\1}}", text)
+    text = BA_PULSEVUL.sub(r"{{G|Electric Susceptibility|\1}}", text)
+    text = BA_CRYSTVUL.sub(r"{{G|Cryo Susceptibility|\1}}", text)
+    text = BA_NATURALVUL.sub(r"{{G|Nature Susceptibility|\1}}", text)
+    text = BA_DISPEL.sub(r"{{G|Dispel|\1}}", text)
+    text = BA_COMBO.sub(r"{{G|Link|\1}}", text)
+    text = BA_GUARD.sub(r"{{G|Protect|\1}}", text)
+    text = BA_SHIELD.sub(r"{{G|Shield|\1}}", text)
+    text = BA_SLOW.sub(r"{{G|Slow|\1}}", text)
+    text = BA_WEAK.sub(r"{{G|Weaken|\1}}", text)
+    text = BA_ORIGINIUM.sub(r"{{G|Originium Crystal|\1}}", text)
+    text = BA_CRYSTBREAK.sub(r"{{G|Shatter|\1}}", text)
+
+    return text
+
+def module_format(text: str) -> str:
+    if not text:
+        return text
+
+    # Text that uses <span> colors
+    text = BA_VUP.sub(r"<blue>\1</span>", text)
+    text = BA_POISE.sub(r"<stagger>\1</span>", text)
+    text = BA_KEY.sub(r"<key>\1</span>", text)
+    text = BA_HEAL.sub(r"<green>\1</span>", text)
+    text = BA_INFO.sub(r"<grey>\1</span>", text)
+    #text = BA_PD.sub(r"{{Color|\1|1}}", text) # Physical Damage
+    #text = BA_CRYST.sub(r"{{Color|\1|4}}", text) # Cryo Damage
+    #text = BA_PULSE.sub(r"{{Color|\1|6}}", text) # Electric Damage
+    #text = BA_FIRE.sub(r"{{Color|\1|3}}", text) # Heat Damage
+    #text = BA_NATUR.sub(r"{{Color|\1|5}}", text) # Nature Damage
+    #text = BA_ETHER.sub(r"{{Color|\1|1e}}", text) # Aether Damage
 
     # Text that uses the {{Glossary}} template
     text = BA_LASTCOMBO.sub(r"{{G|Final Strike|\1}}", text)

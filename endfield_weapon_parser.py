@@ -5,7 +5,9 @@ import parser_lib.constants as const
 import os
 
 # Output file
-OUTPUT_FILE = os.path.join(const.OUTPUT_DIR, "full_weapon_page_data.txt")
+WEAPON_PAGE_OUTPUT = os.path.join(const.OUTPUT_DIR, "full_weapon_page_data.txt")
+WEAPON_SKILL_MODULE_OUTPUT = os.path.join(const.OUTPUT_DIR, "module_weapon_skill_data.txt")
+WEAPON_NAV_TEMPLATE_OUTPUT = os.path.join(const.OUTPUT_DIR, "template_weapon_nav_data.txt")
 os.makedirs(const.OUTPUT_DIR, exist_ok=True)
 
 paths = game_files.build_paths(const.INPUT_DIR)
@@ -20,8 +22,29 @@ system_jump_table = io.load_json(paths["system_jump"])
 # Load language files
 language = io.load_languages(const.INPUT_DIR)
 
+# Weapon lua stuff
+all_skill_ids = set()
+for weapon_data in weapon_basic.values():
+    for sid in weapon_data.get("weaponSkillList", []):
+        if sid:
+            all_skill_ids.add(sid)
+
+skill_lines = []
+seen_lua = set()
+for sid in sorted(all_skill_ids):
+    lua = helpers.build_weapon_skill_lua(sid, skill_patch, language)
+    if lua and lua not in seen_lua:
+        skill_lines.append(lua)
+        seen_lua.add(lua)
+
+skill_lines.sort(key=lambda x: x.split('"]')[0].strip('["'))
+weapon_skill_data = ",\n    ".join(skill_lines)
+
+# Weapon nav stuff
+weapon_sword, weapon_great_sword, weapon_polearm, weapon_handcannon, weapon_arts_unit = helpers.build_weapon_nav_lists(weapon_basic, item_table, language)
+
 # Make that sausage
-with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
+with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
     for weapon_id, weapon_data in weapon_basic.items():
         item_data = item_table.get(weapon_id)
         if not item_data:
@@ -117,6 +140,72 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
 
 [[Category:Weapons]]
 [[Category:{weapon_type}]]
+
+{{{{-stop-}}}}
+
+""")
+
+# Make that sausage AGAIN (This is for the Weapon Skill data module)
+with open(WEAPON_SKILL_MODULE_OUTPUT, "w", encoding="utf-8") as out:
+        out.write(f"""{{{{-start-}}}}
+'''Module:Weapon skill/data'''
+local data={{
+    {weapon_skill_data}
+}}
+
+local colors = {{
+    blue = "#8DA2DF",
+    green = "#ABD040",
+    stagger = "#DFC087",
+    key = "#33C2FF",
+    grey = "#AAAAAA",
+}}
+for _, v in pairs(data) do
+	v.text = v.text:gsub("<([^/<>]-)>", function(k)
+		if colors[k] then
+			return "<span style='color:"..colors[k].."'>"
+		end
+		return k
+	end)
+end
+
+return data
+
+{{{{-stop-}}}}
+
+""")
+
+# Make that sausage YET AGAIN (This is for the Weapon Nav template)
+with open(WEAPON_NAV_TEMPLATE_OUTPUT, "w", encoding="utf-8") as out:
+        out.write(f"""{{{{-start-}}}}
+'''Template:Weapons'''
+<onlyinclude>{{{{Navbox
+| template = Weapons
+
+| title = Weapons
+| State = {{{{{{state|expanded}}}}}}
+
+| group1 = Sword
+| list1 = 
+{weapon_sword}
+
+| Group 2 = Great Sword
+| List 2 = 
+{weapon_great_sword}
+
+| Group 3 = Polearm
+| List 3 = 
+{weapon_polearm}
+
+| Group 4 = Handcannon
+| List 4 = 
+{weapon_handcannon}
+
+| Group 5 = Arts Unit
+| List 5 = 
+{weapon_arts_unit}
+}}}}</onlyinclude><noinclude>
+[[Category:Navboxes]]</noinclude>
 
 {{{{-stop-}}}}
 
