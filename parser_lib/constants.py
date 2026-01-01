@@ -7,6 +7,8 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+TARGET_LEVELS = [1, 20, 40, 60, 80, 99]
+
 LANGUAGE_FILES = {
     "en": "I18nTextTable_EN.json",
     "cn": "I18nTextTable_CN.json",
@@ -65,4 +67,16 @@ ATTRIBUTE_TYPE = {
     84: "Heat Resistance",
     85: "Æther Resistance",
     87: "Arts Intensity",
-  }
+}
+
+ATTRIBUTE_TYPE_ALT = {
+    1: "HP",
+    2: "ATK",
+    9: "CR",
+    12: "AR",
+    15: "AS",
+    39: "STR",
+    40: "AGL",
+    41: "INT",
+    42: "WIL",
+}
