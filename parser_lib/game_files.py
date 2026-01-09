@@ -24,6 +24,19 @@ ATTRIBUTE_SHOW = "AttributeShowConfigTable.json"
 ATTRIBUTE_FILTER = "AttributeFilterTable.json"
 CHARACTER_TABLE = "CharacterTable.json"
 CHARACTER_GROWTH = "CharGrowthTable.json"
+CHARACTER_PROFESSION = "CharProfessionTable.json"
+CHARACTER_TAGS = "CharacterTagTable.json"
+CHARACTER_BATTLE_TAGS = "CharBattleTagTable.json"
+CHARACTER_TAG_DES = "CharacterTagDesTable.json"
+CHARACTER_POTENTIAL = "CharacterPotentialTable.json"
+POTENTIAL_EFFECT = "PotentialTalentEffectTable.json"
+CHARACTER_BASE_SKILL = "SpaceshipCharSkillTable.json"
+BASE_SKILL = "SpaceshipSkillTable.json"
+TAG_DATA = "TagDataTable.json"
+GACHA_POOL_CONTENT = "GachaCharPoolContentTable.json"
+GACHA_POOL = "GachaCharPoolTable.json"
+ENUMS_TABLE = "Enums.json"
+
 
 
 def build_paths(input_dir: str) -> dict[str, str]:
@@ -51,4 +64,16 @@ def build_paths(input_dir: str) -> dict[str, str]:
         "attribute_filter": os.path.join(input_dir, ATTRIBUTE_FILTER),
         "character_table": os.path.join(input_dir, CHARACTER_TABLE),
         "character_growth": os.path.join(input_dir, CHARACTER_GROWTH),
+        "character_profession": os.path.join(input_dir, CHARACTER_PROFESSION),
+        "character_tags": os.path.join(input_dir, CHARACTER_TAGS),
+        "character_battle_tags": os.path.join(input_dir, CHARACTER_BATTLE_TAGS),
+        "character_tag_des": os.path.join(input_dir, CHARACTER_TAG_DES),
+        "character_potential": os.path.join(input_dir, CHARACTER_POTENTIAL),
+        "potential_effect": os.path.join(input_dir, POTENTIAL_EFFECT),
+        "character_base_skill": os.path.join(input_dir, CHARACTER_BASE_SKILL),
+        "base_skill": os.path.join(input_dir, BASE_SKILL),
+        "tag_data": os.path.join(input_dir, TAG_DATA),
+        "gacha_pool_content": os.path.join(input_dir, GACHA_POOL_CONTENT),
+        "gacha_pool": os.path.join(input_dir, GACHA_POOL),
+        "enums_table": os.path.join(input_dir, ENUMS_TABLE),
     }
