@@ -612,13 +612,19 @@ def resolve_operator_faction(operator_id, char_tags, tag_data, language, lang="e
     return resolve_text(language[lang], tag_name_id)
 
 def resolve_operator_gacha_pools(operator_id, gacha_pool_content, gacha_pool, language, lang="en"):
+    starting_operators = ("chr_0002_endminm", "chr_0003_endminf", "chr_9000_endmin", "chr_0004_pelica", "chr_0005_chen")
+    pool_names = []
+
+    if operator_id in starting_operators:
+        pool_names.append("Starting [[Operator]]")
+
     standard_list = gacha_pool_content.get("standard", {}).get("list", [])
     if any(entry.get("charId") == operator_id for entry in standard_list):
         name_id = gacha_pool["standard"]["name"]["id"]
         name_text = resolve_text(language[lang], name_id)
-        return f"[[{name_text}]]"
+        pool_names.append(f"{name_text}")
+        return ", ".join(pool_names)
 
-    pool_names = []
     for pool_key, pool_data in gacha_pool_content.items():
         if pool_key == "standard":
             continue
@@ -1469,6 +1475,9 @@ def operator_talent_costs(operator_id, char_growth, item_table, language, mainAt
 }}}}"""
 
 def operator_base_skills(operator_id, char_growth, base_skill, language, lang="en"):
+    if operator_id in ("chr_0002_endminm", "chr_0003_endminf", "chr_9000_endmin"):
+        return "<i>The Endministrator does not possess any Base Skill.</i>"
+    
     cdata = char_growth.get(operator_id, {})
     if not cdata:
         return ""
@@ -1538,6 +1547,9 @@ def operator_base_skills(operator_id, char_growth, base_skill, language, lang="e
 }}}}"""
 
 def operator_base_talent_costs(operator_id, char_growth, item_table, base_skill, language, lang="en"):
+    if operator_id in ("chr_0002_endminm", "chr_0003_endminf", "chr_9000_endmin"):
+        return ""
+    
     text_table = language.get(lang, {})
     cdata = char_growth.get(operator_id, {})
     if not cdata:
@@ -1609,3 +1621,12 @@ def operator_base_talent_costs(operator_id, char_growth, item_table, base_skill,
 |bs2icon = {get_skill_icon(["1_1", "1_2"])}
 |bscost2 = {finalize_row(bscost2_slots)}
 }}}}"""
+
+def resolve_cv_name(operator_data, language, cv_key, lang="en"):
+    try:
+        cv_id = operator_data["cvName"][cv_key]["id"]
+        if cv_id != "0":
+            return resolve_text(language[lang], cv_id)
+    except KeyError:
+        pass
+    return ""
