@@ -192,3 +192,21 @@ ELEMENT_TYPE = {
     "Natural": "Nature",
     "Ether": "Aether",
 }
+
+SPACESHIP_ROOM_TYPE = {
+    0: "Control Nexus",
+    1: "Manufacturing Cabin",
+    2: "Growth Chamber",
+    3: "Guest Room",
+    4: "Command Center",
+    999996: "Any",
+}
+
+SPACESHIP_ROOM_TYPE_ALT = {
+    0: "CN",
+    1: "MFG",
+    2: "GC",
+    3: "GR",
+    4: "CC",
+    999996: "Any",
+}

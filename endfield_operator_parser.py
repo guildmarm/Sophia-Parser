@@ -5,7 +5,7 @@ import parser_lib.constants as const
 import os
 
 # Output file
-OUTPUT_FILE = os.path.join(const.OUTPUT_DIR, "full_operator_page_data.txt")
+OPERATOR_PAGE_OUTPUT = os.path.join(const.OUTPUT_DIR, "full_operator_page_data.txt")
 os.makedirs(const.OUTPUT_DIR, exist_ok=True)
 
 paths = game_files.build_paths(const.INPUT_DIR)
@@ -31,7 +31,7 @@ enums_table = io.load_json(paths["enums_table"])
 language = io.load_languages(const.INPUT_DIR)
 
 # Make that sausage
-with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
+with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
     for operator_id, operator_data in char_table.items():
         if operator_id in ("chr_0003_endminf", "chr_9000_endmin"):
             continue
@@ -89,12 +89,12 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
         operator_skill_items = helpers.get_operator_skill_items(operator_id, char_growth, item_table, language)
 
         # Operator Talents and Base Skills
-        operator_mainattr_talent = helpers.main_attribute_talent(operator_id, char_growth, item_table, language, mainAttr)
-        operator_unique_talent = helpers.operator_passive_talents(operator_id, operator_name, char_growth, potential_effect, language, enums_table, item_table)
-        operator_gear_talent = helpers.operator_outfit_talent(operator_id, char_growth, item_table, language)
-        operator_talent_costs = ""
-        operator_base_skills = ""
-        base_skill_costs = ""
+        operator_mainattr_talent = helpers.main_attribute_talent(operator_id, char_growth, language, mainAttr)
+        operator_unique_talent = helpers.operator_passive_talents(operator_id, operator_name, char_growth, potential_effect, language, enums_table)
+        operator_gear_talent = helpers.operator_outfit_talent(operator_id, char_growth, language)
+        operator_talent_costs = helpers.operator_talent_costs(operator_id, char_growth, item_table, language, mainAttr)
+        operator_base_skills = helpers.operator_base_skills(operator_id, char_growth, base_skill, language)
+        base_skill_costs = helpers.operator_base_talent_costs(operator_id, char_growth, item_table, base_skill, language)
 
         # Output
         out.write(f"""{{{{-start-}}}}
@@ -160,7 +160,6 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
 
 
 ==Stats==
-
 {{{{Operator data
 |main = {mainAttr}
 |sub = {subAttr}
@@ -170,7 +169,6 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
 }}}}
 
 ==Combat Skills==
-
 {operator_combat_skills}
 {operator_skill_items}
 

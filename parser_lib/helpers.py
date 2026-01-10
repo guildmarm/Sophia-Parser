@@ -1,5 +1,5 @@
 from .io import load_json
-from .constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS
+from .constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT
 from .format_text import module_format, efdb_format
 from collections import OrderedDict, defaultdict
 import math
@@ -1147,25 +1147,17 @@ def get_operator_skill_items(operator_id, char_growth, item_table, language, lan
     lines.append("{{Skill upgrade end}}")
     return "\n".join(lines)
 
-def main_attribute_talent(operator_id, char_growth, item_table, language, main_attr, lang="en"):
+def main_attribute_talent(operator_id, char_growth, language, mainAttr, lang="en"):
     text_table = language.get(lang, {})
     cdata = char_growth.get(operator_id)
     if not cdata:
         return ""
-
-    def get_item_name(item_id):
-        item = item_table.get(item_id)
-        if not item:
-            return f"Unknown Item ({item_id})"
-        name_id = str(item.get("name", {}).get("id", ""))
-        return text_table.get(name_id, item_id).strip()
 
     talent_map = cdata.get("talentNodeMap", {})
     suffixes = ["1", "3", "5", "7"]
     talent_name = ""
     conds = ["", "", "", ""]
     descs = ["", "", "", ""]
-    costs = ["", "", "", ""]
 
     for i, suffix in enumerate(suffixes):
         node_id = f"{operator_id}_{suffix}"
@@ -1177,57 +1169,37 @@ def main_attribute_talent(operator_id, char_growth, item_table, language, main_a
                 if title_id != "0":
                     full_name = text_table.get(title_id, "").strip()
                     talent_name = re.split(r'\s+[IVX]+$', full_name)[0]
+            
             break_stage = attr_info.get("breakStage", 0)
             conds[i] = f"Elite {break_stage}"
             desc_id = str(attr_info.get("desc", {}).get("id", "0"))
             if desc_id != "0":
                 descs[i] = text_table.get(desc_id, "").strip()
-            req_items = node.get("requiredItem", [])
-            formatted_items = []
-            for itm in req_items:
-                i_id = itm.get("id")
-                count = itm.get("count")
-                name = "T-Creds" if i_id == "item_gold" else get_item_name(i_id)
-                formatted_items.append(f"{{{{I|{name}|{count}}}}}")
-            
-            costs[i] = ", ".join(formatted_items)
 
     return f"""{{{{Operator talent
 |name = {talent_name}
-|icon = {main_attr}
+|icon = {mainAttr}
 |cond1 = {conds[0]}
 |desc1 = {descs[0]}
-|cost1 = {costs[0]}
 |cond2 = {conds[1]}
 |desc2 = {descs[1]}
-|cost2 = {costs[1]}
 |cond3 = {conds[2]}
 |desc3 = {descs[2]}
-|cost3 = {costs[2]}
 |cond4 = {conds[3]}
 |desc4 = {descs[3]}
-|cost4 = {costs[3]}
 }}}}"""
 
-def operator_outfit_talent(operator_id, char_growth, item_table, language, lang="en"):
+def operator_outfit_talent(operator_id, char_growth, language, lang="en"):
     text_table = language.get(lang, {})
     cdata = char_growth.get(operator_id)
     if not cdata:
         return ""
-
-    def get_item_name(item_id):
-        item = item_table.get(item_id)
-        if not item:
-            return f"Unknown Item ({item_id})"
-        name_id = str(item.get("name", {}).get("id", ""))
-        return text_table.get(name_id, item_id).strip()
 
     break_map = cdata.get("charBreakCostMap", {})
     keys = ["equipBreakT2", "equipBreakT3", "equipBreakT4"]
     talent_name = ""
     conds = ["", "", ""]
     descs = ["", "", ""]
-    costs = ["", "", ""]
 
     for i, key in enumerate(keys):
         node = break_map.get(key)
@@ -1237,54 +1209,33 @@ def operator_outfit_talent(operator_id, char_growth, item_table, language, lang=
                 if name_id != "0":
                     full_name = text_table.get(name_id, "").strip()
                     talent_name = re.split(r'\s+[IVX]+$', full_name)[0]
+            
             break_stage = node.get("breakStage", 0)
             conds[i] = f"Elite {break_stage}"
             desc_id = str(node.get("description", {}).get("id", "0"))
             if desc_id != "0":
                 descs[i] = text_table.get(desc_id, "").strip()
-            req_items = node.get("requiredItem", [])
-            formatted_items = []
-            for itm in req_items:
-                i_id = itm.get("id")
-                count = itm.get("count")
-                name = "T-Creds" if i_id == "item_gold" else get_item_name(i_id)
-                formatted_items.append(f"{{{{I|{name}|{count}}}}}")
-            
-            costs[i] = ", ".join(formatted_items)
 
     return f"""{{{{Operator talent
 |name = {talent_name}
 |icon = Gear icon
 |cond1 = {conds[0]}
 |desc1 = {descs[0]}
-|cost1 = {costs[0]}
 |cond2 = {conds[1]}
 |desc2 = {descs[1]}
-|cost2 = {costs[1]}
 |cond3 = {conds[2]}
 |desc3 = {descs[2]}
-|cost3 = {costs[2]}
 }}}}"""
 
-def operator_passive_talents(operator_id, operator_name, char_growth, potential_effect, language, enums_table, item_table, lang="en"):
+def operator_passive_talents(operator_id, operator_name, char_growth, potential_effect, language, enums_table, lang="en"):
     op_data = char_growth.get(operator_id, {})
     talent_nodes = op_data.get("talentNodeMap", {})
 
-    def get_item_name(item_id):
-        item = item_table.get(item_id)
-        if not item:
-            return f"Unknown Item ({item_id})"
-        name_id = str(item.get("name", {}).get("id", ""))
-        return language[lang].get(name_id, item_id).strip()
-    
     levels = ["1_1", "1_2", "1_3", "2_1", "2_2", "2_3"]
     name_levels = ["0_1", "0_2", "0_3", "1_1", "1_2", "1_3"]
     descs = ["", "", "", "", "", ""]
     conds = ["", "", "", "", "", ""]
-    costs = ["", "", "", "", "", ""]
     talent_names = ["", "", "", "", "", ""]
-    
-    icon_name = ""
 
     effect_operator_id = operator_id
     if operator_id == "chr_0002_endminm":
@@ -1299,15 +1250,6 @@ def operator_passive_talents(operator_id, operator_name, char_growth, potential_
             node = talent_nodes[node_key]
             passive_info = node.get("passiveSkillNodeInfo", {})
             
-            required_items = node.get("requiredItem", [])
-            formatted_costs = []
-            for item_req in required_items:
-                i_id = item_req.get("id")
-                count = item_req.get("count", 0)
-                i_name = get_item_name(i_id)
-                formatted_costs.append(f"{{{{I|{i_name}|{count}}}}}")
-            costs[i] = ", ".join(formatted_costs)
-
             break_stage = passive_info.get("breakStage", 0)
             conds[i] = f"Elite {break_stage}"
             
@@ -1424,31 +1366,246 @@ def operator_passive_talents(operator_id, operator_name, char_growth, potential_
         else:
             descs[i] = ""
             conds[i] = ""
-            costs[i] = ""
 
     return f"""{{{{Operator talent
 |name = {talent_names[0] or talent_names[1] or talent_names[2]}
 |icon = {operator_name} Talent 1 icon
 |cond1 = {conds[0]}
 |desc1 = {descs[0]}
-|cost1 = {costs[0]}
 |cond2 = {conds[1]}
 |desc2 = {descs[1]}
-|cost2 = {costs[1]}
 |cond3 = {conds[2]}
 |desc3 = {descs[2]}
-|cost3 = {costs[2]}
 }}}}
 {{{{Operator talent
 |name = {talent_names[3] or talent_names[4] or talent_names[5]}
 |icon = {operator_name} Talent 2 icon
 |cond1 = {conds[3]}
 |desc1 = {descs[3]}
-|cost1 = {costs[3]}
 |cond2 = {conds[4]}
 |desc2 = {descs[4]}
-|cost2 = {costs[4]}
 |cond3 = {conds[5]}
 |desc3 = {descs[5]}
-|cost3 = {costs[5]}
+}}}}"""
+
+def operator_talent_costs(operator_id, char_growth, item_table, language, mainAttr, lang="en"):
+    text_table = language.get(lang, {})
+    cdata = char_growth.get(operator_id, {})
+    if not cdata:
+        return ""
+
+    def get_item_name(item_id):
+        if item_id == "item_gold":
+            return "T-Creds"
+        item = item_table.get(item_id)
+        if not item:
+            return item_id
+        name_id = str(item.get("name", {}).get("id", ""))
+        return text_table.get(name_id, item_id).strip()
+
+    def format_node_costs(node):
+        if not node:
+            return None
+        req_items = node.get("requiredItem", [])
+        if not req_items:
+            return None
+        return ", ".join([f"{get_item_name(itm['id'])} x{itm['count']}" for itm in req_items])
+
+    tcost1_slots = ["-", "-", "-", "-"]
+    tcost2_slots = ["-", "-", "-", "-"]
+    tcost3_slots = ["-", "-", "-", "-"]
+    tcost4_slots = ["-", "-", "-", "-"]
+
+    talent_map = cdata.get("talentNodeMap", {})
+    break_map = cdata.get("charBreakCostMap", {})
+
+    for suffix in ["1", "3", "5", "7"]:
+        node = talent_map.get(f"{operator_id}_{suffix}")
+        if node:
+            stage = node.get("attributeNodeInfo", {}).get("breakStage", 0)
+            if 1 <= stage <= 4:
+                cost_str = format_node_costs(node)
+                if cost_str:
+                    tcost1_slots[stage - 1] = cost_str
+
+    for sub in ["1", "2", "3"]:
+        node = talent_map.get(f"{operator_id}_passive_skill_0_{sub}")
+        if node:
+            stage = node.get("passiveSkillNodeInfo", {}).get("breakStage", 0)
+            if 1 <= stage <= 4:
+                cost_str = format_node_costs(node)
+                if cost_str:
+                    tcost2_slots[stage - 1] = cost_str
+
+    for sub in ["1", "2", "3"]:
+        node = talent_map.get(f"{operator_id}_passive_skill_1_{sub}")
+        if node:
+            stage = node.get("passiveSkillNodeInfo", {}).get("breakStage", 0)
+            if 1 <= stage <= 4:
+                cost_str = format_node_costs(node)
+                if cost_str:
+                    tcost3_slots[stage - 1] = cost_str
+
+    gear_keys = ["equipBreakT1", "equipBreakT2", "equipBreakT3", "equipBreakT4"]
+    for i, key in enumerate(gear_keys):
+        node = break_map.get(key)
+        if node:
+            stage = node.get("breakStage", i + 1)
+            if 1 <= stage <= 4:
+                cost_str = format_node_costs(node)
+                if cost_str:
+                    tcost4_slots[stage - 1] = cost_str
+
+    def finalize_row(slots):
+        return "; ".join(slots) + ";"
+
+    return f"""{{{{Operator talent cost
+|type = Talent
+|attr = {mainAttr}
+|acost = {finalize_row(tcost1_slots)}
+|tcost1 = {finalize_row(tcost2_slots)}
+|tcost2 = {finalize_row(tcost3_slots)}
+|gcost = {finalize_row(tcost4_slots)}
+}}}}"""
+
+def operator_base_skills(operator_id, char_growth, base_skill, language, lang="en"):
+    cdata = char_growth.get(operator_id, {})
+    if not cdata:
+        return ""
+
+    talent_nodes = cdata.get("talentNodeMap", {})
+    
+    levels = ["0_1", "0_2", "1_1", "1_2"]
+    bslevels = ["1_1", "1_2", "2_1", "2_2"]
+    conds = ["", "", "", ""]
+    talent_names = ["", "", "", ""]
+    descs = ["", "", "", ""]
+    facilities = ["", "", "", ""]
+    icons = ["", "", "", ""]
+
+    for i in range(len(levels)):
+        node_key = f"fac_{operator_id}_{levels[i]}"
+        node = talent_nodes.get(node_key)
+        if node:
+            fac_info = node.get("factorySkillNodeInfo", {})
+            break_stage = fac_info.get("breakStage", 0)
+            conds[i] = f"Elite {break_stage}"
+
+        target_skill_id = f"spaceship_skill_{operator_id}_{bslevels[i]}"
+        s_data = base_skill.get(target_skill_id)
+        if s_data:
+            name_id = str(s_data.get("name", {}).get("id", "0"))
+            if name_id != "0":
+                raw_name = resolve_text(language[lang], name_id)
+                clean_name = re.split(r'[\s\u0370-\u03ff\u1f00-\u1fff]+$', raw_name)[0]
+                clean_name = re.split(r'\s+[IVXLC]+$', clean_name)[0]
+                talent_names[i] = clean_name.strip()
+            
+            desc_id = str(s_data.get("desc", {}).get("id", "0"))
+            if desc_id != "0":
+                raw_desc = resolve_text(language[lang], desc_id)
+                descs[i] = efdb_format(raw_desc)
+
+            room_type = s_data.get("roomType")
+            facility_name = ""
+            if room_type is not None:
+                facility_name = SPACESHIP_ROOM_TYPE.get(str(room_type)) or SPACESHIP_ROOM_TYPE.get(room_type, "")
+                facility_name_alt = SPACESHIP_ROOM_TYPE_ALT.get(str(room_type)) or SPACESHIP_ROOM_TYPE_ALT.get(room_type, "")
+                facilities[i] = facility_name
+
+            raw_icon = s_data.get("icon", "")
+            if raw_icon and facility_name_alt:
+                clean_icon_suffix = raw_icon.replace("facskill_spaceship_", "")
+                icons[i] = f"{facility_name_alt}-{clean_icon_suffix}"
+
+    return f"""{{{{Operator base skill
+|name = {talent_names[0] or talent_names[1]}
+|icon = {icons[0] or icons[1]}
+|facility = {facilities[0] or facilities[1]}
+|cond1 = {conds[0]}
+|desc1 = {descs[0]}
+|cond2 = {conds[1]}
+|desc2 = {descs[1]}
+}}}}
+{{{{Operator base skill
+|name = {talent_names[2] or talent_names[3]}
+|icon = {icons[2] or icons[3]}
+|facility = {facilities[2] or facilities[3]}
+|cond1 = {conds[2]}
+|desc1 = {descs[2]}
+|cond2 = {conds[3]}
+|desc2 = {descs[3]}
+}}}}"""
+
+def operator_base_talent_costs(operator_id, char_growth, item_table, base_skill, language, lang="en"):
+    text_table = language.get(lang, {})
+    cdata = char_growth.get(operator_id, {})
+    if not cdata:
+        return ""
+
+    def get_item_name(item_id):
+        if item_id == "item_gold":
+            return "T-Creds"
+        item = item_table.get(item_id)
+        if not item:
+            return item_id
+        name_id = str(item.get("name", {}).get("id", ""))
+        return text_table.get(name_id, item_id).strip()
+
+    def format_node_costs(node):
+        if not node:
+            return None
+        req_items = node.get("requiredItem", [])
+        if not req_items:
+            return None
+        return ", ".join([f"{{{{I|{get_item_name(itm['id'])}|{itm['count']}}}}}" for itm in req_items])
+
+    def get_skill_icon(suffix_list):
+        for sub in suffix_list:
+            major, minor = sub.split('_')
+            bs_suffix = f"{int(major)+1}_{minor}"
+            target_id = f"spaceship_skill_{operator_id}_{bs_suffix}"
+            s_data = base_skill.get(target_id)
+            
+            if s_data:
+                room_type = s_data.get("roomType")
+                facility_name_alt = SPACESHIP_ROOM_TYPE_ALT.get(str(room_type)) or SPACESHIP_ROOM_TYPE_ALT.get(room_type, "")
+                raw_icon = s_data.get("icon", "")
+                
+                if raw_icon and facility_name_alt:
+                    clean_icon = raw_icon.replace("facskill_spaceship_", "")
+                    return f"{facility_name_alt}-{clean_icon}"
+        return ""
+
+    bscost1_slots = ["-", "-", "-", "-"]
+    bscost2_slots = ["-", "-", "-", "-"]
+    talent_map = cdata.get("talentNodeMap", {})
+
+    for sub in ["0_1", "0_2"]:
+        node = talent_map.get(f"fac_{operator_id}_{sub}")
+        if node:
+            stage = node.get("factorySkillNodeInfo", {}).get("breakStage", 0)
+            if 1 <= stage <= 4:
+                cost_str = format_node_costs(node)
+                if cost_str:
+                    bscost1_slots[stage - 1] = cost_str
+
+    for sub in ["1_1", "1_2"]:
+        node = talent_map.get(f"fac_{operator_id}_{sub}")
+        if node:
+            stage = node.get("factorySkillNodeInfo", {}).get("breakStage", 0)
+            if 1 <= stage <= 4:
+                cost_str = format_node_costs(node)
+                if cost_str:
+                    bscost2_slots[stage - 1] = cost_str
+
+    def finalize_row(slots):
+        return "; ".join(slots) + ";"
+
+    return f"""{{{{Operator talent cost
+|type = Base Skill
+|bs1icon = {get_skill_icon(["0_1", "0_2"])}
+|bscost1 = {finalize_row(bscost1_slots)}
+|bs2icon = {get_skill_icon(["1_1", "1_2"])}
+|bscost2 = {finalize_row(bscost2_slots)}
 }}}}"""
