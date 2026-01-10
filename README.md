@@ -6,4 +6,5 @@ In the input folder, add the game tables folder. You can change the INPUT_DIR fo
 This tool requires a Python3 installation as well as mw.cleric and mwparserfromhell.
 
 mw.cleric: `pip install mwcleric`
+
 mwparserfromhell: `pip install mwparserfromhell`
