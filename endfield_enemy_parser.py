@@ -4,10 +4,9 @@ import parser_lib.game_files as game_files
 import parser_lib.constants as const
 import os
 
-TARGET_LEVELS = [1, 20, 40, 60, 80, 99]
-
 # Output file
-OUTPUT_FILE = os.path.join(const.OUTPUT_DIR, "full_enemy_page_data.txt")
+ENEMY_PAGE_OUTPUT = os.path.join(const.OUTPUT_DIR, "full_enemy_page_data.txt")
+ENEMY_NAV_TEMPLATE_OUTPUT = os.path.join(const.OUTPUT_DIR, "template_enemy_nav_data.txt")
 os.makedirs(const.OUTPUT_DIR, exist_ok=True)
 
 paths = game_files.build_paths(const.INPUT_DIR)
@@ -37,8 +36,11 @@ for enemy_id, display_data in enemy_display.items():
 
 duplicate_name_map = {k: v for k, v in duplicate_name_map.items() if len(v) > 1}
 
+# Stuff for enemy nav
+enemy_aggeloi, enemy_landbreakers, enemy_pirates, enemy_wildlife = helpers.build_enemy_nav_lists(enemy_attr, enemy_display, enemy_group, wiki_group, enemy_type, language, enemy_name_counts, duplicate_name_map)
+
 # Make that sausage
-with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
+with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
     for enemy_id, attr_data in enemy_attr.items():
         display_data = enemy_display.get(enemy_id)
         if not display_data:
@@ -51,24 +53,7 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
         enemy_name_image = helpers.sanitize_image_name(enemy_name)
 
         # Append the ID if there are duplicates but just the last part of it
-        if enemy_name_counts.get(enemy_name_clean, 0) > 1:
-            short_id = enemy_id.split("_")[-1]
-            enemy_name_clean = f"{enemy_name_clean} ({short_id})"
-            enemy_name = f"{enemy_name} ({short_id})"
-            enemy_name_image = f"{enemy_name_image}_{short_id}"
-
-            alternate_ids = [eid for eid in duplicate_name_map[enemy_name_clean.split(" (")[0]] if eid != enemy_id]
-            alternate_names = []
-            for alt_id in alternate_ids:
-                alt_short = alt_id.split("_")[-1]
-                alternate_names.append(f"{enemy_name_clean.split(' (')[0]} ({alt_short})")
-
-            enemy_alternate_text = ""
-            if alternate_names:
-                enemy_alternate_text = " Alternate form(s): " + ", ".join(f"[[{name}]]" for name in alternate_names)
-        else:
-            enemy_alternate_text = ""
-
+        enemy_name, enemy_name_clean, enemy_name_image, enemy_alternate_text = helpers.resolve_enemy_names(enemy_id, enemy_name, enemy_name_clean, enemy_name_image, enemy_name_counts, duplicate_name_map)
         cn_name = helpers.resolve_text(language["cn"], name_id)
         tc_name = helpers.resolve_text(language["tc"], name_id)
         jp_name = helpers.resolve_text(language["jp"], name_id)
@@ -81,28 +66,7 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
         enemy_desc = helpers.resolve_text(language["en"], desc_id)
 
         # Enemy species
-        enemy_species = ""
-        for entry_id, entry_data in enemy_group.items():
-            ref_id = entry_data.get("refMonsterTemplateId")
-            if ref_id == enemy_id:
-                group_id = entry_data.get("groupId")
-                break
-        else:
-            group_id = None
-
-        if group_id:
-            # Search wiki_group for the matching groupId
-            group_name_id = None
-            for group_type, group_list_data in wiki_group.items():
-                for group in group_list_data.get("list", []):
-                    if group.get("groupId") == group_id:
-                        group_name_id = group.get("groupName", {}).get("id")
-                        break
-                if group_name_id:
-                    break
-            
-            if group_name_id:
-                enemy_species = helpers.resolve_text(language["en"], group_name_id)
+        enemy_species = helpers.resolve_enemy_species(enemy_id, enemy_group, wiki_group, language)
 
         # Enemy type
         display_type_id = display_data.get("displayType")
@@ -111,107 +75,19 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
         enemy_class = helpers.resolve_text(language["en"], type_name_id)
 
         # Enemy abilities
-        enemy_ability_list = []
-
-        ability_desc_ids = display_data.get("abilityDescIds", [])
-        for ability_id in ability_desc_ids:
-            ability_data = enemy_ability.get(str(ability_id), {})
-            desc_id = ability_data.get("description", {}).get("id")
-            ability_text = helpers.resolve_text(language["en"], desc_id)
-            if ability_text:
-                enemy_ability_list.append(f"*{ability_text}")
-
-        enemy_ability_text = "\n".join(enemy_ability_list)
+        enemy_ability_text = helpers.resolve_enemy_abilities(display_data, enemy_ability, language)
 
         # Enemy locations
-        enemy_location_list = []
-
-        distribution_ids = display_data.get("distributionIds", [])
-        for dist_id in distribution_ids:
-            dist_data = distribution_info.get(str(dist_id), {})
-            area_name_id = dist_data.get("areaName", {}).get("id")
-            area_name = helpers.resolve_text(language["en"], area_name_id)
-            if area_name:
-                enemy_location_list.append(f"*{area_name}")
-
-        # Fallback if no locations
-        if not enemy_location_list:
-            enemy_location_list.append("*TBA")
-
-        enemy_location = "\n".join(enemy_location_list)
+        enemy_location = helpers.resolve_enemy_locations(display_data, distribution_info, language)
 
         # Enemy drops
-        drop_data = enemy_drop.get(enemy_id, {})
-        drop_item_ids = drop_data.get("dropItemIds", [])
-        enemy_drop_item_list = []
-
-        for item_id in drop_item_ids:
-            item_data = item_table.get(str(item_id), {})
-            item_name_id = item_data.get("name", {}).get("id")
-            item_name = helpers.resolve_text(language["en"], item_name_id)
-            if item_name:
-                enemy_drop_item_list.append(f"{{{{I|{item_name}}}}}")
-
-        enemy_drop_item = " ".join(enemy_drop_item_list)
+        enemy_drop_item = helpers.resolve_enemy_drops(enemy_id, enemy_drop, item_table, language)
 
         # Enemy stats
-        level_blocks = attr_data.get("levelDependentAttributes", [])
-        level_stat_map = {}
-
-        for block in level_blocks:
-            attrs = block.get("attrs", [])
-            level = None
-            stat_map = {}
-
-            for attr in attrs:
-                attr_type = attr.get("attrType")
-                attr_value = attr.get("attrValue")
-
-                if attr_type == 0:
-                    level = attr_value
-                else:
-                    stat_map[attr_type] = attr_value
-
-            if level is not None:
-                level_stat_map[level] = stat_map
-
-        # Level dependent stats
-        hp_values = []
-        atk_values = []
-        def_values = []
-
-        for lvl in TARGET_LEVELS:
-            stats = level_stat_map.get(lvl, {})
-
-            hp_values.append(str(stats.get(1, "")))
-            atk_values.append(str(stats.get(2, "")))
-            def_values.append(str(stats.get(3, "")))
-
-        enemy_hp = ", ".join(hp_values)
-        enemy_atk = ", ".join(atk_values)
-        enemy_def = ", ".join(def_values)
+        enemy_hp, enemy_atk, enemy_def = helpers.resolve_enemy_level_stats(attr_data)
 
         # Level independent stats
-        independent_block = attr_data.get("levelIndependentAttributes", {})
-        independent_stats = {}
-
-        for attr in independent_block.get("attrs", []):
-            attr_type = attr.get("attrType")
-            attr_value = attr.get("attrValue")
-            independent_stats[attr_type] = attr_value
-
-        enemy_weight = independent_stats.get(8, "")
-        enemy_attack_range = independent_stats.get(12, "")
-        enemy_stagger_hp = independent_stats.get(20, "")
-        enemy_stagger_time = independent_stats.get(21, "")
-        enemy_stagger_damage = independent_stats.get(27, "")
-
-        physical_resist = independent_stats.get(80, "")
-        nature_resist = independent_stats.get(81, "")
-        cryo_resist = independent_stats.get(82, "")
-        electric_resist = independent_stats.get(83, "")
-        heat_resist = independent_stats.get(84, "")
-        aether_resist = independent_stats.get(85, "")
+        enemy_weight, enemy_attack_range, enemy_stagger_hp, enemy_stagger_time, enemy_stagger_damage, physical_resist, nature_resist, cryo_resist, electric_resist, heat_resist, aether_resist = helpers.resolve_enemy_independent_stats(attr_data)
 
         # Output
         out.write(f"""{{{{-start-}}}}
@@ -259,6 +135,37 @@ The '''{enemy_name}''' is a [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]
 ==Navigation==
 {{{{Enemies}}}}
 [[Category:{enemy_class} enemies]]
+
+{{{{-stop-}}}}
+
+""")
+
+# Make that sausage again (This is for the Enemy Nav template)
+with open(ENEMY_NAV_TEMPLATE_OUTPUT, "w", encoding="utf-8") as out:
+        out.write(f"""{{{{-start-}}}}
+'''Template:Enemies'''
+<onlyinclude>{{{{Navbox
+| Title = Enemies
+| State = {{{{{{state|expanded}}}}}}
+| Group style = text-align:center;
+
+| Group 1 = Aggeloi
+| List 1 = {enemy_aggeloi}
+
+| Group 2 = Landbreakers
+| List 2 = {enemy_landbreakers}
+
+| Group 3 = Cangzei Pirates
+| List 3 = {enemy_pirates}
+
+| Group 4 = Wildlife
+| List 4 = {enemy_wildlife}
+
+}}}}</onlyinclude><noinclude>This navbox template is used as a means to navigate a list of [[enemy|enemies]].
+
+To use this template, add <code><nowiki>{{{{Enemies}}}}</nowiki></code> at the end of an article.
+
+[[Category:Navboxes]]</noinclude>
 
 {{{{-stop-}}}}
 
