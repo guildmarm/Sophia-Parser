@@ -3,6 +3,12 @@ import parser_lib.helpers as helpers
 import parser_lib.game_files as game_files
 import parser_lib.constants as const
 import os
+import re
+import mwparserfromhell
+from mwcleric.wiki_client import WikiClient
+
+# Set endfield wiki as mw.cleric site
+site = WikiClient("endfield.wiki.gg")
 
 # Output file
 OPERATOR_PAGE_OUTPUT = os.path.join(const.OUTPUT_DIR, "full_operator_page_data.txt")
@@ -30,6 +36,12 @@ enums_table = io.load_json(paths["enums_table"])
 # Load language files
 language = io.load_languages(const.INPUT_DIR)
 
+# mw.cleric helpers
+def get_wiki_section(text, header):
+    pattern = rf"==\s*{header}\s*==\s*(.*?)(?=\n==|$)"
+    match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+    return match.group(1).strip() if match else ""
+
 # Make that sausage
 with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
     for operator_id, operator_data in char_table.items():
@@ -40,6 +52,25 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         name_id = operator_data["name"]["id"]
         operator_name = helpers.resolve_text(language["en"], name_id)
         operator_name_clean = helpers.sanitize_name(operator_name)
+
+        # mw.cleric input
+        wiki_params = {p: "" for p in ['realname', 'fileno', 'theme', 'illustrator', 'age', 'experience', 'birthplace', 'height']}
+        wiki_profile = ""
+        wiki_changelog = ""
+
+        page = site.client.pages[operator_name]
+        if page.exists:
+            wikitext = page.text()
+            parsed_code = mwparserfromhell.parse(wikitext)
+            for template in parsed_code.filter_templates():
+                if template.name.matches("Operator infobox"):
+                    for p in wiki_params.keys():
+                        if template.has(p):
+                            wiki_params[p] = str(template.get(p).value).strip()
+                    break
+            
+            wiki_profile = get_wiki_section(wikitext, "Profile")
+            wiki_changelog = get_wiki_section(wikitext, "Changelog")
         
         # Make sure the endmin's page has both images and file names
         if operator_name == "Endministrator":
@@ -57,6 +88,12 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         kr_name = helpers.resolve_text(language["kr"], name_id)
         sp_name = helpers.resolve_text(language["sp"], name_id)
         ru_name = helpers.resolve_text(language["ru"], name_id)
+
+        # CV names
+        cn_cv = helpers.resolve_cv_name(operator_data, language, "ChiCVName")
+        jp_cv = helpers.resolve_cv_name(operator_data, language, "JapCVName")
+        en_cv = helpers.resolve_cv_name(operator_data, language, "EngCVName")
+        kr_cv = helpers.resolve_cv_name(operator_data, language, "KorCVName")
 
         # Operator info
         rarity = operator_data.get("rarity", "")
@@ -99,7 +136,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         # Output
         out.write(f"""{{{{-start-}}}}
 '''{operator_name_clean}'''
-{{{{Operator info
+{{{{Operator infobox
 |name = {operator_name}
 |rarity = {rarity}
 |class = {profession}
@@ -111,11 +148,6 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |sub = {subAttr}
 |headhunting = {banner}
 |quote = {operator_quote}
-}}}}
-{{{{Operator tab}}}}
-{{{{Operator infobox
-|rarity = {rarity}star
-|name = {operator_name}
 |image = 
 {operator_name_image}
 |filename = {operator_display_id}
@@ -125,21 +157,21 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |krname = {kr_name}
 |spname = {sp_name}
 |runame = {ru_name}
-|realname =  
-|fileno = 
-|theme = 
-|illustrator = 
-|jpcv = 
-|cncv = 
-|encv = 
-|krcv = 
+|realname = {wiki_params['realname']}
+|fileno = {wiki_params['fileno']}
+|theme = {wiki_params['theme']}
+|illustrator = {wiki_params['illustrator']}
+|jpcv = {jp_cv}
+|cncv = {cn_cv}
+|encv = {en_cv}
+|krcv = {kr_cv}
 |gender = {gender}
-|age =
-|experience = 
-|birthplace =
+|age = {wiki_params['age']}
+|experience = {wiki_params['experience']}
+|birthplace = {wiki_params['birthplace']}
 |birthdate = {birthdate}
 |race = {race}
-|height = 
+|height = {wiki_params['height']}
 |infection = {infection}
 |strength = {strength}
 |tactical = {tactical}
@@ -157,7 +189,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 }}}}
 
 ==Profile==
-
+{wiki_profile}
 
 ==Stats==
 {{{{Operator data
@@ -183,11 +215,10 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 {base_skill_costs}
 
 ==Changelog==
-{{Changelog|
-*'''EVENT_NAME_HERE''' introduced.}}
+{wiki_changelog}
 
 ==Navigation==
-{{Operators}}
+{{{{Operators}}}}
 
 {{{{-stop-}}}}
 
