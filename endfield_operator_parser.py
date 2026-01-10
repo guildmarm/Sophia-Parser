@@ -100,10 +100,12 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         prof_id = operator_data.get("profession")
         prof_name_id = char_profession[str(prof_id)]["name"]["id"]
         profession = helpers.resolve_text(language["en"], prof_name_id)
+        profession = "Supporter" if profession == "Support" else profession
         weapon = const.WEAPON_TYPE.get(operator_data.get("weaponType"), "")
         element = const.ELEMENT_TYPE.get(operator_data.get("charTypeId"), "")
         faction = helpers.resolve_operator_faction(operator_id, char_tags, tag_data, language)
         operator_tags = helpers.resolve_operator_tags(operator_data, char_battle_tags, language)
+        starting_operator = helpers.get_starting_operator(operator_id)
         banner = helpers.resolve_operator_gacha_pools(operator_id, gacha_pool_content, gacha_pool, language)
         operator_quote = helpers.get_operator_quote(operator_data, operator_id, language)
 
@@ -146,6 +148,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |tags = {operator_tags}
 |main = {mainAttr}
 |sub = {subAttr}
+|starting = {starting_operator}
 |headhunting = {banner}
 |quote = {operator_quote}
 |image = 
