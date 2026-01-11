@@ -16,7 +16,7 @@ def resolve_text(lang_table, text_id):
 def sanitize_name(name):
     if not name:
         return ""
-    return name.replace("[", "(").replace("]", ")").replace("{", "(").replace("}", ")").replace("\u00B7", " ")
+    return name.replace("[", "(").replace("]", ")").replace("{", "(").replace("}", ")")
 
 # Images cannot contain a colon. Seperated from the sanitized weapon name because page names CAN have a colon.
 def sanitize_image_name(name):
@@ -38,3 +38,4 @@ def resolve_sources(source_ids, system_jump_table, language, lang="en"):
         if localized_desc:
             sources.append(localized_desc)
     return ", ".join(sources)
+
