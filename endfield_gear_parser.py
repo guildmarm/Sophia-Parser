@@ -1,8 +1,9 @@
-import parser_lib.io as io
-import parser_lib.helpers as helpers
-import parser_lib.game_files as game_files
-import parser_lib.constants as const
-import parser_lib.format_text as format_text
+import lib.io as io
+import lib.general as general
+import lib.helpers.gear as gear
+import lib.game_files as game_files
+import lib.constants as const
+import lib.format_text as format_text
 import os
 
 # Output file
@@ -25,10 +26,10 @@ attribute_filter = io.load_json(paths["attribute_filter"])
 language = io.load_languages(const.INPUT_DIR)
 
 # Gear set lines
-gear_set_lines = helpers.build_gear_set_lines(equip_table, item_table, equip_suit, language)
+gear_set_lines = gear.build_gear_set_lines(equip_table, item_table, equip_suit, language)
 
 # Gear nav lines
-gear_armor, gear_glove, gear_kit = helpers.build_gear_nav_lists(equip_table, item_table, language)
+gear_armor, gear_glove, gear_kit = gear.build_gear_nav_lists(equip_table, item_table, language)
 
 # Make that sausage
 with open(GEAR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
@@ -38,49 +39,49 @@ with open(GEAR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
             continue
 
         # Gear formula source
-        source_text = helpers.resolve_gear_sources_from_formula(gear_id, equip_formula, item_table, system_jump_table, language)
+        source_text = gear.resolve_gear_sources_from_formula(gear_id, equip_formula, item_table, system_jump_table, language)
 
         # Gear names
         name_id = item_data.get("name", {}).get("id")
-        gear_name = helpers.resolve_text(language["en"], name_id)
-        gear_name_clean = helpers.sanitize_name(gear_name)
-        gear_name_image = helpers.sanitize_image_name(gear_name)
-        cn_name = helpers.resolve_text(language["cn"], name_id)
-        tc_name = helpers.resolve_text(language["tc"], name_id)
-        jp_name = helpers.resolve_text(language["jp"], name_id)
-        kr_name = helpers.resolve_text(language["kr"], name_id)
-        sp_name = helpers.resolve_text(language["sp"], name_id)
-        ru_name = helpers.resolve_text(language["ru"], name_id)
+        gear_name = general.resolve_text(language["en"], name_id)
+        gear_name_clean = general.sanitize_name(gear_name)
+        gear_name_image = general.sanitize_image_name(gear_name)
+        cn_name = general.resolve_text(language["cn"], name_id)
+        tc_name = general.resolve_text(language["tc"], name_id)
+        jp_name = general.resolve_text(language["jp"], name_id)
+        kr_name = general.resolve_text(language["kr"], name_id)
+        sp_name = general.resolve_text(language["sp"], name_id)
+        ru_name = general.resolve_text(language["ru"], name_id)
 
         # Descriptions
-        desc = helpers.resolve_text(language["en"], item_data.get("desc", {}).get("id"))
-        deco_desc = helpers.resolve_text(language["en"], item_data.get("decoDesc", {}).get("id"))
+        desc = general.resolve_text(language["en"], item_data.get("desc", {}).get("id"))
+        deco_desc = general.resolve_text(language["en"], item_data.get("decoDesc", {}).get("id"))
 
         # Gear type and rarity
-        gear_type = helpers.get_gear_part_type(gear_data)
+        gear_type = gear.get_gear_part_type(gear_data)
         rarity = item_data.get("rarity", "")
 
         # Gear level and region
         gear_level = gear_data.get("minWearLv", "")
-        gear_region = helpers.get_gear_region(gear_data)
+        gear_region = gear.get_gear_region(gear_data)
 
         # Gear set and effect
-        gear_set, set_effect = helpers.resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language)
+        gear_set, set_effect = gear.resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language)
         set_effect_formatted = format_text.efdb_format(set_effect)
         gear_setname = f"[[{gear_set}]]" if gear_set else ""
         gear_set_template = f"{{{{Gear Set|{gear_set}}}}}" if gear_set else ""
         gear_set_section = f"==Set Items==" if gear_set else ""
 
         # Gear base and artificed stats
-        (gear_def, gear_pstat, gear_pvalue, p_enhanced, gear_sstat, gear_svalue, s_enhanced, gear_tstat, gear_tvalue, t_enhanced) = helpers.resolve_gear_attributes_sections(gear_data, attribute_filter, language)
-        gear_artifice = helpers.resolve_artifice_bool(p_enhanced, s_enhanced, t_enhanced)
-        gear_def = helpers.format_stat_value(gear_def, gear_artifice)
-        gear_pvalue = helpers.format_stat_value(gear_pvalue, gear_artifice)
-        gear_svalue = helpers.format_stat_value(gear_svalue, gear_artifice)
-        gear_tvalue = helpers.format_stat_value(gear_tvalue, gear_artifice)
+        (gear_def, gear_pstat, gear_pvalue, p_enhanced, gear_sstat, gear_svalue, s_enhanced, gear_tstat, gear_tvalue, t_enhanced) = gear.resolve_gear_attributes_sections(gear_data, attribute_filter, language)
+        gear_artifice = gear.resolve_artifice_bool(p_enhanced, s_enhanced, t_enhanced)
+        gear_def = gear.format_stat_value(gear_def, gear_artifice)
+        gear_pvalue = gear.format_stat_value(gear_pvalue, gear_artifice)
+        gear_svalue = gear.format_stat_value(gear_svalue, gear_artifice)
+        gear_tvalue = gear.format_stat_value(gear_tvalue, gear_artifice)
 
         # Gear recipe
-        gear_recipe = helpers.resolve_gear_recipe(gear_id, equip_formula, item_table, language)
+        gear_recipe = gear.resolve_gear_recipe(gear_id, equip_formula, item_table, language)
 
         out.write(f"""{{{{-start-}}}}
 '''{gear_name_clean}'''

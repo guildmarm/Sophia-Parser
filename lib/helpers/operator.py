@@ -1,509 +1,11 @@
-from .io import load_json
-from .constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS
-from .format_text import module_format, efdb_format
+from lib.io import load_json
+from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS
+from lib.format_text import module_format, efdb_format
+import lib.general as general
 from collections import OrderedDict, defaultdict
 import math
 import html
 import re
-
-def resolve_text(lang_table, text_id):
-    if not text_id or str(text_id) == "0":
-        return ""
-    return lang_table.get(str(text_id), "")
-
-# Get those germs off (Can't have a page title with [] or {} in mediawiki)
-def sanitize_name(name):
-    if not name:
-        return ""
-    return name.replace("[", "(").replace("]", ")").replace("{", "(").replace("}", ")").replace("\u00B7", " ")
-
-# Images cannot contain a colon. Seperated from the sanitized weapon name because page names CAN have a colon.
-def sanitize_image_name(name):
-    if not name:
-        return ""
-    return name.replace(":", "").replace(" ", "_")
-
-def resolve_sources(source_ids, system_jump_table, language, lang="en"):
-    if not source_ids:
-        return ""
-    sources = []
-    for oid in source_ids:
-        entry = system_jump_table.get(oid)
-        if not entry:
-            continue
-        desc_id = entry.get("desc", {}).get("id")
-        localized_desc = resolve_text(language[lang], desc_id)
-        if localized_desc:
-            sources.append(localized_desc)
-    return ", ".join(sources)
-
-
-def get_weapon_type(weapon_id: str) -> str:
-    wid = weapon_id.lower()
-    if "claym" in wid:
-        return "Great Sword"
-    if "funnel" in wid:
-        return "Arts Unit"
-    if "pistol" in wid:
-        return "Handcannon"
-    if "sword" in wid:
-        return "Sword"
-    if "lance" in wid:
-        return "Polearm"
-    return "Unknown"
-
-
-def resolve_skill_name(skill_id, skill_patch, language, lang="en"):
-    entry = skill_patch.get(skill_id)
-    if not entry:
-        return ""
-    bundle = entry.get("SkillPatchDataBundle", [])
-    if not bundle:
-        return ""
-    name_id = bundle[0].get("skillName", {}).get("id")
-    return resolve_text(language[lang], name_id)
-
-def build_weapon_skill_lua(skill_id, skill_patch, language, lang="en"):
-    entry = skill_patch.get(skill_id)
-    if not entry:
-        return ""
-
-    bundle = entry.get("SkillPatchDataBundle", [])
-    if not bundle:
-        return ""
-
-    name_id = bundle[0].get("skillName", {}).get("id")
-    skill_name = resolve_text(language[lang], name_id)
-    if not skill_name:
-        return ""
-
-    texts = []
-    blackboards = []
-
-    for rank in bundle:
-        desc_id = rank.get("description", {}).get("id")
-        raw_text = resolve_text(language[lang], desc_id)
-        texts.append(raw_text)
-
-        bb = rank.get("blackboard", [])
-        blackboards.append({b.get("key"): b.get("value") for b in bb if "value" in b})
-
-    if not texts or not blackboards:
-        return ""
-
-    base_text = texts[0].replace("\n", " ")
-
-    placeholder_matches = list(re.finditer(r"\{([^}:]+)(?::([^}]+))?\}", base_text))
-    values = []
-
-    for i, match in enumerate(placeholder_matches):
-        key = match.group(1)
-        raw_val = match.group(2)
-
-        col = []
-        for rank_vals in blackboards:
-            v = rank_vals.get(key, 0.0)
-            if raw_val and "%" in raw_val:
-                v = round(v * 100, 2)
-            else:
-                v = round(v, 2)
-            col.append(v)
-
-        if len(set(col)) == 1:
-            base_text = base_text.replace(match.group(0), f"{col[0]:.2f}" + ("%"
-                                     if raw_val and "%" in raw_val else ""))
-        else:
-            base_text = base_text.replace(match.group(0), f"{{{len(values)}}}" + ("%"
-                                     if raw_val and "%" in raw_val else ""))
-            values.append(col)
-
-    safe_text = module_format(base_text).replace('"', '\\"')
-
-    if values:
-        values_str = "{" + ", ".join("{" + ",".join(f"{v:.2f}" for v in col) + "}" for col in values) + "}"
-    else:
-        values_str = "{}"
-
-    return f'["{skill_name}"] = {{text = "{safe_text}", values = {values_str}}}'
-
-def resolve_tuning_items(weapon_id, weapon_basic, breakthrough_table, item_table, language, lang="en"):
-    weapon_data = weapon_basic.get(weapon_id)
-    if not weapon_data:
-        return []
-
-    btid = weapon_data.get("breakthroughTemplateId")
-    breakthrough = breakthrough_table.get(btid)
-    if not breakthrough:
-        return []
-
-    steps = breakthrough.get("list", [])
-    output = []
-
-    for step in steps[1:]:
-        items = step.get("breakItemList", [])
-        parts = []
-        for item in items:
-            item_id = item.get("id")
-            count = item.get("count", 0)
-            item_entry = item_table.get(item_id)
-            if not item_entry:
-                continue
-            name_id = item_entry.get("name", {}).get("id")
-            localized_name = resolve_text(language[lang], name_id)
-            parts.append(f"{{{{I|{localized_name}|{count}}}}}")
-        gold = step.get("breakthroughGold")
-        if gold:
-            parts.append(f"{{{{I|T-Creds|{gold}}}}}")
-        output.append(" ".join(parts))
-    return output
-
-
-def get_batk_values(level_template_id, weapon_upgrade_table):
-    upgrade_entry = weapon_upgrade_table.get(level_template_id)
-    if not upgrade_entry:
-        return [""] * 6
-    levels = upgrade_entry.get("list", [])
-    target_levels = [1, 20, 40, 60, 80, 99]
-    base_atks = []
-    for lvl in target_levels:
-        match = next((x for x in levels if x.get("weaponLv") == lvl), None)
-        base_atks.append(str(match.get("baseAtk")) if match else "")
-    return base_atks
-
-def get_gear_part_type(equip_data):
-    part_type = equip_data.get("partType")
-    return {0: "Armor", 1: "Gloves", 2: "Kit",}.get(part_type, "")
-
-def get_gear_region(equip_data):
-    domain_id = equip_data.get("domainId")
-    return {"domain_1": "Valley IV", "domain_2": "Wuling",}.get(domain_id, "")
-
-def resolve_gear_attributes_sections(equip_data, attribute_filter, language, lang="en"):
-    gear_def = ""
-    pstat = pvalue = ""
-    sstat = svalue = ""
-    tstat = tvalue = ""
-
-    p_enhanced = []
-    s_enhanced = []
-    t_enhanced = []
-
-    base_def = equip_data.get("displayBaseAttrModifier")
-    if base_def and base_def.get("attrType") == 3:
-        val = base_def.get("attrValue")
-        if val is not None:
-            gear_def = str(val)
-
-    modifiers = equip_data.get("displayAttrModifiers", [])
-
-    filter_list = attribute_filter.get("equipExtraAttr", {}).get("list", [])
-
-    for idx, mod in enumerate(modifiers):
-        attr_type = mod.get("attrType")
-        base_val = mod.get("attrValue")
-        enhanced_vals = mod.get("enhancedAttrValues", [])
-        composite_attr = mod.get("compositeAttr", "")
-
-        if "DamageTakenScalar" in composite_attr or attr_type in (4, 5, 6, 7):
-            if base_val is not None:
-                base_val = 1 - base_val
-            enhanced_vals = [1 - v for v in enhanced_vals]
-
-        values = []
-        if base_val is not None:
-            values.append(str(base_val))
-        values.extend(str(v) for v in enhanced_vals)
-        values_str = ", ".join(values)
-
-        stat_name = ""
-
-        if attr_type == 0:
-            for entry in filter_list:
-                if (
-                    entry.get("attributeType") == 0
-                    and entry.get("compositeAttr") == composite_attr
-                ):
-                    name_id = entry.get("name", {}).get("id")
-                    stat_name = resolve_text(language[lang], name_id)
-                    break
-        else:
-            stat_name = ATTRIBUTE_TYPE.get(attr_type, "")
-
-        if not stat_name:
-            continue
-
-        if idx == 0:
-            pstat = stat_name
-            pvalue = values_str
-            p_enhanced = enhanced_vals
-        elif idx == 1:
-            sstat = stat_name
-            svalue = values_str
-            s_enhanced = enhanced_vals
-        elif idx == 2:
-            tstat = stat_name
-            tvalue = values_str
-            t_enhanced = enhanced_vals
-
-    return (
-        gear_def,
-        pstat, pvalue, p_enhanced,
-        sstat, svalue, s_enhanced,
-        tstat, tvalue, t_enhanced,
-    )
-
-def resolve_artifice_bool(p_enhanced, s_enhanced, t_enhanced):
-    if p_enhanced or s_enhanced or t_enhanced:
-        return "yes"
-    return "no"
-
-def format_stat_value(value_str, artifice_bool):
-    if not value_str:
-        return ""
-
-    numbers = [v.strip() for v in value_str.split(",")]
-
-    if artifice_bool == "no" and len(set(numbers)) == 1:
-        numbers = [numbers[0]]
-
-    formatted = []
-    for v in numbers:
-        try:
-            num = float(v)
-
-            if 0 < num < 1:
-                formatted.append(f"+{round(num * 100, 1)}%")
-            else:
-                rounded = round(num, 1)
-                sign = '+' if rounded > 0 else '-' if rounded < 0 else ''
-                abs_val = abs(rounded)
-                formatted_val = (
-                    str(int(abs_val)) if abs_val.is_integer() else str(abs_val)
-                )
-                formatted.append(f"{sign}{formatted_val}")
-        except ValueError:
-            formatted.append(v)
-
-    return ", ".join(formatted)
-
-def resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language, lang="en"):
-    gear_set = ""
-    set_effect = ""
-
-    for suit_key, suit_data in equip_suit.items():
-        equip_list = suit_data.get("equipList", [])
-        if gear_id not in equip_list:
-            continue
-
-        suit_name_id = suit_data.get("list", [{}])[0].get("suitName", {}).get("id")
-        gear_set = language[lang].get(suit_name_id, "")
-        skill_id = suit_data.get("list", [{}])[0].get("skillID", "")
-        skill_entry = skill_patch.get(skill_id, {})
-        bundle = skill_entry.get("SkillPatchDataBundle", [])
-        if not bundle:
-            break
-
-        desc_id = bundle[0].get("description", {}).get("id")
-        desc_text = language[lang].get(desc_id, "")
-        blackboard = {bb["key"]: bb["value"] for bb in bundle[0].get("blackboard", []) if "key" in bb}
-
-        def repl(match):
-            sign = match.group("sign") or ""
-            expr = match.group("expr")
-            fmt = match.group("fmt")
-            expr_eval = expr
-            for key, val in blackboard.items():
-                expr_eval = re.sub(rf"\b{re.escape(key)}\b", str(val), expr_eval)
-            try:
-                result = eval(expr_eval)
-            except Exception:
-                return match.group(0)
-
-            if fmt == "0%":
-                val_num = result * 100
-                val_str = f"{int(round(val_num))}%"
-            else:
-                val_str = f"{int(round(result))}" if float(result).is_integer() else f"{result:.1f}"
-            return f"{sign}{val_str}"
-
-        pattern = r"(?P<sign>[+-]?)\{(?P<expr>[^{}:]+)(?::(?P<fmt>0%?))?\}"
-        desc_text = re.sub(pattern, repl, desc_text)
-        set_effect = desc_text
-        break
-    return gear_set, set_effect
-
-def resolve_gear_recipe(gear_id, equip_formula, item_table, language, lang="en"):
-    recipe_parts = []
-
-    for formula in equip_formula.values():
-        if formula.get("outcomeEquipId") == gear_id:
-            cost_ids = formula.get("costItemId", [])
-            cost_nums = formula.get("costItemNum", [])
-
-            for item_id, count in zip(cost_ids, cost_nums):
-                item_entry = item_table.get(item_id, {})
-                name_id = item_entry.get("name", {}).get("id")
-                item_name = language[lang].get(name_id, "")
-                if item_name:
-                    recipe_parts.append(f"{{{{I|{item_name}|{count}}}}}")
-            break
-
-    return " ".join(recipe_parts)
-
-def resolve_gear_sources_from_formula(gear_id, equip_formula, item_table, system_jump_table, language, lang="en"):
-    for formula in equip_formula.values():
-        if formula.get("outcomeEquipId") != gear_id:
-            continue
-
-        formula_id = formula.get("formulaId")
-        if not formula_id:
-            return ""
-
-        formula_item = item_table.get(formula_id)
-        if not formula_item:
-            return ""
-
-        source_ids = formula_item.get("obtainWayIds", [])
-
-        sources = []
-        for oid in source_ids:
-            entry = system_jump_table.get(oid)
-            if not entry:
-                continue
-            desc_id = entry.get("desc", {}).get("id")
-            localized_desc = resolve_text(language[lang], desc_id)
-            if localized_desc:
-                sources.append(localized_desc)
-
-        if not sources:
-            return ""
-
-        if len(sources) == 1:
-            return sources[0]
-
-        return "\n".join(f"*{s}" for s in sources)
-
-    return ""
-
-def build_gear_set_lines(equip_table, item_table, equip_suit, language, lang="en"):
-    gear_sets = {}
-
-    for gear_id, gear_data in equip_table.items():
-        item_data = item_table.get(gear_id)
-        if not item_data:
-            continue
-
-        gear_set, _ = resolve_gear_set_and_effect(gear_id, equip_suit, {}, language, lang=lang)
-        if not gear_set:
-            continue
-
-        gear_name = sanitize_name(resolve_text(language[lang], item_data.get("name", {}).get("id")))
-        rarity = item_data.get("rarity", 0)
-        gear_type = get_gear_part_type(gear_data)
-
-        if gear_set not in gear_sets:
-            gear_sets[gear_set] = []
-
-        gear_sets[gear_set].append((rarity, gear_type, gear_name))
-
-    lines = []
-    type_order = {"Armor": 0, "Gloves": 1, "Kit": 2}
-
-    for set_name, items in sorted(gear_sets.items()):
-        sorted_items = sorted(items, key=lambda x: (x[0], type_order.get(x[1], 99), x[2]))
-        item_strs = [f"{{{{Gear Icon|{name}|{rarity}}}}}" for rarity, _, name in sorted_items]
-        line = f"| {set_name} = {' '.join(item_strs)}"
-        lines.append(line)
-
-    return "\n".join(lines)
-
-def build_gear_nav_lists(equip_table, item_table, language, lang="en"):
-    armor_list = []
-    glove_list = []
-    kit_list = []
-
-    temp_armor = []
-    temp_glove = []
-    temp_kit = []
-
-    for gear_id, gear_data in equip_table.items():
-        item_data = item_table.get(gear_id)
-        if not item_data:
-            continue
-
-        name_id = item_data.get("name", {}).get("id")
-        gear_name = resolve_text(language[lang], name_id)
-        rarity = item_data.get("rarity", 0)
-
-        entry_text = f"{{{{Item Icon|{gear_name}|{rarity}}}}}"
-
-        gear_type = get_gear_part_type(gear_data)
-        if gear_type == "Armor":
-            temp_armor.append((rarity, gear_name, entry_text))
-        elif gear_type == "Gloves":
-            temp_glove.append((rarity, gear_name, entry_text))
-        elif gear_type == "Kit":
-            temp_kit.append((rarity, gear_name, entry_text))
-
-    armor_list = [e[2] for e in sorted(temp_armor, key=lambda x: (x[0], x[1]))]
-    glove_list = [e[2] for e in sorted(temp_glove, key=lambda x: (x[0], x[1]))]
-    kit_list = [e[2] for e in sorted(temp_kit, key=lambda x: (x[0], x[1]))]
-
-    gear_armor = " ".join(armor_list)
-    gear_glove = " ".join(glove_list)
-    gear_kit = " ".join(kit_list)
-
-    return gear_armor, gear_glove, gear_kit
-
-def build_weapon_nav_lists(weapon_basic, item_table, language, lang="en"):
-    sword_list = []
-    great_sword_list = []
-    polearm_list = []
-    handcannon_list = []
-    arts_unit_list = []
-
-    temp_sword = []
-    temp_great_sword = []
-    temp_polearm = []
-    temp_handcannon = []
-    temp_arts_unit = []
-
-    for weapon_id, weapon_data in weapon_basic.items():
-        item_data = item_table.get(weapon_id)
-        if not item_data:
-            continue
-
-        name_id = item_data.get("name", {}).get("id")
-        weapon_name = resolve_text(language[lang], name_id)
-        rarity = item_data.get("rarity", 0)
-
-        entry_text = f"* {{{{Navitem|{weapon_name}|{rarity}}}}}"
-
-        weapon_type = get_weapon_type(weapon_id)
-        if weapon_type == "Sword":
-            temp_sword.append((rarity, weapon_name, entry_text))
-        elif weapon_type == "Great Sword":
-            temp_great_sword.append((rarity, weapon_name, entry_text))
-        elif weapon_type == "Polearm":
-            temp_polearm.append((rarity, weapon_name, entry_text))
-        elif weapon_type == "Handcannon":
-            temp_handcannon.append((rarity, weapon_name, entry_text))
-        elif weapon_type == "Arts Unit":
-            temp_arts_unit.append((rarity, weapon_name, entry_text))
-
-    sword_list = [e[2] for e in sorted(temp_sword, key=lambda x: (-x[0], x[1]))]
-    great_sword_list = [e[2] for e in sorted(temp_great_sword, key=lambda x: (-x[0], x[1]))]
-    polearm_list = [e[2] for e in sorted(temp_polearm, key=lambda x: (-x[0], x[1]))]
-    handcannon_list = [e[2] for e in sorted(temp_handcannon, key=lambda x: (-x[0], x[1]))]
-    arts_unit_list = [e[2] for e in sorted(temp_arts_unit, key=lambda x: (-x[0], x[1]))]
-
-    weapon_sword = "\n".join(sword_list)
-    weapon_great_sword = "\n".join(great_sword_list)
-    weapon_polearm = "\n".join(polearm_list)
-    weapon_handcannon = "\n".join(handcannon_list)
-    weapon_arts_unit = "\n".join(arts_unit_list)
-
-    return weapon_sword, weapon_great_sword, weapon_polearm, weapon_handcannon, weapon_arts_unit
 
 def operator_stats_truncate(value, decimals=3):
     factor = 10 ** decimals
@@ -591,7 +93,7 @@ def resolve_operator_tags(operator_data, char_battle_tags, language, lang="en"):
         tag_entry = char_battle_tags.get(tag_key)
         if tag_entry:
             tag_text_id = tag_entry.get("id")
-            tag_text = resolve_text(language[lang], tag_text_id)
+            tag_text = general.resolve_text(language[lang], tag_text_id)
             tag_names.append(tag_text)
     return ", ".join(tag_names)
 
@@ -601,7 +103,7 @@ def get_operator_quote(operator_data, operator_id, language, lang="en"):
         if entry.get("id") == target_id:
             desc_id = entry.get("voiceDesc", {}).get("id")
             if desc_id:
-                return resolve_text(language[lang], desc_id)
+                return general.resolve_text(language[lang], desc_id)
     return ""
 
 def resolve_operator_faction(operator_id, char_tags, tag_data, language, lang="en"):
@@ -609,7 +111,7 @@ def resolve_operator_faction(operator_id, char_tags, tag_data, language, lang="e
     if not bloc_tag_id:
         return ""
     tag_name_id = tag_data[bloc_tag_id]["tagName"]["id"]
-    return resolve_text(language[lang], tag_name_id)
+    return general.resolve_text(language[lang], tag_name_id)
 
 def get_starting_operator(operator_id):
     starting_operators = ("chr_0002_endminm", "chr_0003_endminf", "chr_9000_endmin", "chr_0004_pelica", "chr_0005_chen")
@@ -648,7 +150,7 @@ def get_operator_profile_records(operator_data, language, lang="en"):
     for record in operator_data.get("profileRecord", []):
         desc_id = record.get("recordDesc", {}).get("id")
         if desc_id:
-            text = resolve_text(language[lang], desc_id)
+            text = general.resolve_text(language[lang], desc_id)
             output.append(text)
             match_gender = re.search(r"GENDER:\s*(.+)", text)
             if match_gender:
@@ -707,7 +209,7 @@ def get_operator_hobbies_and_expertise(operator_id, char_tags, tag_data, char_ta
         name_id = tag_entry.get("tagName", {}).get("id")
         if not name_id:
             continue
-        text = resolve_text(language[lang], name_id)
+        text = general.resolve_text(language[lang], name_id)
         if text:
             resolved_hobbies.append(text)
 
@@ -718,7 +220,7 @@ def get_operator_hobbies_and_expertise(operator_id, char_tags, tag_data, char_ta
         name_id = tag_entry.get("tagName", {}).get("id")
         if not name_id:
             continue
-        text = resolve_text(language[lang], name_id)
+        text = general.resolve_text(language[lang], name_id)
         if text:
             resolved_experts.append(text)
 
@@ -729,7 +231,7 @@ def get_operator_hobbies_and_expertise(operator_id, char_tags, tag_data, char_ta
         name_id = tag_entry.get("tagName", {}).get("id")
         if not name_id:
             continue
-        text = resolve_text(language[lang], name_id)
+        text = general.resolve_text(language[lang], name_id)
         if text:
             resolved_prefers.append(text)
     prefer = resolved_prefers[0] if resolved_prefers else ""
@@ -749,7 +251,7 @@ def get_operator_hobbies_and_expertise(operator_id, char_tags, tag_data, char_ta
         desc_id = tag_desc_entry.get(tag_id, {}).get("desc", {}).get("id")
         if not desc_id or desc_id == "0":
             return ""
-        return resolve_text(language[lang], desc_id)
+        return general.resolve_text(language[lang], desc_id)
 
     if len(hobby_ids) > 0:
         hobbydesc1 = resolve_desc(hobby_ids[0])
@@ -777,14 +279,14 @@ def get_operator_potentials(operator_id, char_potential, potential_effect, langu
             continue
         name_id = bundle.get("name", {}).get("id")
         if name_id and name_id != "0":
-            pot_names[level - 1] = resolve_text(language[lang], name_id)
+            pot_names[level - 1] = general.resolve_text(language[lang], name_id)
 
         effect_key = f"{effect_operator_id}_potential_{level}"
         effect_entry = potential_effect.get(effect_key, {})
         desc_id = effect_entry.get("desc", {}).get("id")
         raw_desc = ""
         if desc_id and desc_id != "0":
-            raw_desc = resolve_text(language[lang], desc_id)
+            raw_desc = general.resolve_text(language[lang], desc_id)
             for data in effect_entry.get("dataList", []):
                 for bb in data.get("attachBuff", {}).get("blackboard", []):
                     key = bb.get("key")
@@ -912,7 +414,7 @@ def get_operator_upgrade_items(operator_id, char_growth, item_table, language, l
             name_id = item_info.get("name", {}).get("id")
 
             if name_id:
-                item_name = resolve_text(language[lang], name_id)
+                item_name = general.resolve_text(language[lang], name_id)
                 item_templates.append(f"{item_name} x{count}")
         
         results[wiki_key] = ", ".join(item_templates)
@@ -1258,7 +760,7 @@ def operator_passive_talents(operator_id, operator_name, char_growth, potential_
             
             name_id = passive_info.get("name", {}).get("id")
             if name_id and name_id != "0":
-                talent_names[i] = resolve_text(language[lang], name_id)
+                talent_names[i] = general.resolve_text(language[lang], name_id)
 
             effect_key = f"{effect_operator_id}_talent_{current_level}"
             effect_entry = potential_effect.get(effect_key, {})
@@ -1266,7 +768,7 @@ def operator_passive_talents(operator_id, operator_name, char_growth, potential_
             raw_desc = ""
             
             if desc_id and desc_id != "0":
-                raw_desc = resolve_text(language[lang], desc_id)
+                raw_desc = general.resolve_text(language[lang], desc_id)
                 
                 for data in effect_entry.get("dataList", []):
                     for source_path in ["attachBuff", "attachSkill"]:
@@ -1502,14 +1004,14 @@ def operator_base_skills(operator_id, char_growth, base_skill, language, lang="e
         if s_data:
             name_id = str(s_data.get("name", {}).get("id", "0"))
             if name_id != "0":
-                raw_name = resolve_text(language[lang], name_id)
+                raw_name = general.resolve_text(language[lang], name_id)
                 clean_name = re.split(r'[\s\u0370-\u03ff\u1f00-\u1fff]+$', raw_name)[0]
                 clean_name = re.split(r'\s+[IVXLC]+$', clean_name)[0]
                 talent_names[i] = clean_name.strip()
             
             desc_id = str(s_data.get("desc", {}).get("id", "0"))
             if desc_id != "0":
-                raw_desc = resolve_text(language[lang], desc_id)
+                raw_desc = general.resolve_text(language[lang], desc_id)
                 descs[i] = efdb_format(raw_desc)
 
             room_type = s_data.get("roomType")
@@ -1623,208 +1125,7 @@ def resolve_cv_name(operator_data, language, cv_key, lang="en"):
     try:
         cv_id = operator_data["cvName"][cv_key]["id"]
         if cv_id != "0":
-            return resolve_text(language[lang], cv_id)
+            return general.resolve_text(language[lang], cv_id)
     except KeyError:
         pass
     return ""
-
-def resolve_enemy_names(enemy_id, enemy_name, enemy_name_clean, enemy_name_image, enemy_name_counts, duplicate_name_map):
-    if enemy_name_counts.get(enemy_name_clean, 0) > 1:
-        short_id = enemy_id.split("_")[-1]
-        enemy_name_clean = f"{enemy_name_clean} ({short_id})"
-        enemy_name = f"{enemy_name} ({short_id})"
-        enemy_name_image = f"{enemy_name_image}_{short_id}"
-
-        alternate_ids = [eid for eid in duplicate_name_map[enemy_name_clean.split(" (")[0]] if eid != enemy_id]
-        alternate_names = []
-        for alt_id in alternate_ids:
-            alt_short = alt_id.split("_")[-1]
-            alternate_names.append(f"{enemy_name_clean.split(' (')[0]} ({alt_short})")
-
-        enemy_alternate_text = ""
-        if alternate_names:
-            enemy_alternate_text = " Alternate form(s): " + ", ".join(f"[[{name}]]" for name in alternate_names)
-    else:
-        enemy_alternate_text = ""
-        
-    return enemy_name, enemy_name_clean, enemy_name_image, enemy_alternate_text
-
-def resolve_enemy_species(enemy_id, enemy_group, wiki_group, language, lang="en"):
-    enemy_species = ""
-    for entry_id, entry_data in enemy_group.items():
-        ref_id = entry_data.get("refMonsterTemplateId")
-        if ref_id == enemy_id:
-            group_id = entry_data.get("groupId")
-            break
-    else:
-        group_id = None
-
-    if group_id:
-        group_name_id = None
-        for group_type, group_list_data in wiki_group.items():
-            for group in group_list_data.get("list", []):
-                if group.get("groupId") == group_id:
-                    group_name_id = group.get("groupName", {}).get("id")
-                    break
-            if group_name_id:
-                break
-        
-        if group_name_id:
-            enemy_species = resolve_text(language[lang], group_name_id)
-            
-    return enemy_species
-
-def resolve_enemy_abilities(display_data, enemy_ability, language, lang="en"):
-    enemy_ability_list = []
-    ability_desc_ids = display_data.get("abilityDescIds", [])
-    for ability_id in ability_desc_ids:
-        ability_data = enemy_ability.get(str(ability_id), {})
-        desc_id = ability_data.get("description", {}).get("id")
-        ability_text = resolve_text(language[lang], desc_id)
-        if ability_text:
-            enemy_ability_list.append(f"*{ability_text}")
-
-    return "\n".join(enemy_ability_list)
-
-def resolve_enemy_locations(display_data, distribution_info, language, lang="en"):
-    enemy_location_list = []
-    distribution_ids = display_data.get("distributionIds", [])
-    for dist_id in distribution_ids:
-        dist_data = distribution_info.get(str(dist_id), {})
-        area_name_id = dist_data.get("areaName", {}).get("id")
-        area_name = resolve_text(language[lang], area_name_id)
-        if area_name:
-            enemy_location_list.append(f"*{area_name}")
-
-    if not enemy_location_list:
-        enemy_location_list.append("*TBA")
-
-    return "\n".join(enemy_location_list)
-
-def resolve_enemy_drops(enemy_id, enemy_drop, item_table, language, lang="en"):
-    drop_data = enemy_drop.get(enemy_id, {})
-    drop_item_ids = drop_data.get("dropItemIds", [])
-    enemy_drop_item_list = []
-
-    for item_id in drop_item_ids:
-        item_data = item_table.get(str(item_id), {})
-        item_name_id = item_data.get("name", {}).get("id")
-        item_name = resolve_text(language[lang], item_name_id)
-        if item_name:
-            enemy_drop_item_list.append(f"{{{{I|{item_name}}}}}")
-
-    return " ".join(enemy_drop_item_list)
-
-def resolve_enemy_level_stats(attr_data):
-    level_blocks = attr_data.get("levelDependentAttributes", [])
-    level_stat_map = {}
-
-    for block in level_blocks:
-        attrs = block.get("attrs", [])
-        level = None
-        stat_map = {}
-
-        for attr in attrs:
-            attr_type = attr.get("attrType")
-            attr_value = attr.get("attrValue")
-
-            if attr_type == 0:
-                level = attr_value
-            else:
-                stat_map[attr_type] = attr_value
-
-        if level is not None:
-            level_stat_map[level] = stat_map
-
-    hp_values = []
-    atk_values = []
-    def_values = []
-
-    for lvl in TARGET_LEVELS:
-        stats = level_stat_map.get(lvl, {})
-
-        hp_values.append(str(stats.get(1, "")))
-        atk_values.append(str(stats.get(2, "")))
-        def_values.append(str(stats.get(3, "")))
-
-    enemy_hp = ", ".join(hp_values)
-    enemy_atk = ", ".join(atk_values)
-    enemy_def = ", ".join(def_values)
-
-    return enemy_hp, enemy_atk, enemy_def
-
-def resolve_enemy_independent_stats(attr_data):
-    independent_block = attr_data.get("levelIndependentAttributes", {})
-    independent_stats = {}
-
-    for attr in independent_block.get("attrs", []):
-        attr_type = attr.get("attrType")
-        attr_value = attr.get("attrValue")
-        independent_stats[attr_type] = attr_value
-
-    enemy_weight = independent_stats.get(8, "")
-    enemy_attack_range = independent_stats.get(12, "")
-    enemy_stagger_hp = independent_stats.get(20, "")
-    enemy_stagger_time = independent_stats.get(21, "")
-    enemy_stagger_damage = independent_stats.get(27, "")
-
-    physical_resist = independent_stats.get(80, "")
-    nature_resist = independent_stats.get(81, "")
-    cryo_resist = independent_stats.get(82, "")
-    electric_resist = independent_stats.get(83, "")
-    heat_resist = independent_stats.get(84, "")
-    aether_resist = independent_stats.get(85, "")
-
-    return (
-        enemy_weight, enemy_attack_range, enemy_stagger_hp, enemy_stagger_time, 
-        enemy_stagger_damage, physical_resist, nature_resist, cryo_resist, 
-        electric_resist, heat_resist, aether_resist
-    )
-
-def build_enemy_nav_lists(enemy_attr, enemy_display, enemy_group, wiki_group, enemy_type, language, enemy_name_counts, duplicate_name_map, lang="en"):
-    class_weights = {
-        "Boss": 5,
-        "Alpha": 4,
-        "Elite": 3,
-        "Advanced": 2,
-        "Common": 1
-    }
-
-    temp_aggeloi = []
-    temp_landbreakers = []
-    temp_pirates = []
-    temp_wildlife = []
-
-    for enemy_id, attr_data in enemy_attr.items():
-        display_data = enemy_display.get(enemy_id)
-        if not display_data:
-            continue
-
-        enemy_species = resolve_enemy_species(enemy_id, enemy_group, wiki_group, language, lang)
-        
-        name_id = display_data.get("name", {}).get("id")
-        enemy_name = resolve_text(language[lang], name_id)
-        enemy_name, _, _, _ = resolve_enemy_names(enemy_id, enemy_name, sanitize_name(enemy_name), sanitize_image_name(enemy_name), enemy_name_counts, duplicate_name_map)
-        
-        display_type_id = display_data.get("displayType")
-        type_data = enemy_type.get(str(display_type_id), {})
-        type_name_id = type_data.get("name", {}).get("id")
-        enemy_class = resolve_text(language[lang], type_name_id)
-        
-        entry_text = f"{{{{Enemy Icon|{enemy_name}|{enemy_class}}}}}"
-        weight = class_weights.get(enemy_class, 0)
-
-        if enemy_species == "Aggeloi":
-            temp_aggeloi.append((weight, enemy_name, entry_text))
-        elif enemy_species == "Landbreakers":
-            temp_landbreakers.append((weight, enemy_name, entry_text))
-        elif enemy_species == "Cangzei Pirates":
-            temp_pirates.append((weight, enemy_name, entry_text))
-        elif enemy_species == "Wildlife":
-            temp_wildlife.append((weight, enemy_name, entry_text))
-
-    def finalize_list(temp_list):
-        sorted_items = sorted(temp_list, key=lambda x: (-x[0], x[1]))
-        return " &bull; ".join([e[2] for e in sorted_items])
-
-    return finalize_list(temp_aggeloi), finalize_list(temp_landbreakers), finalize_list(temp_pirates), finalize_list(temp_wildlife)
