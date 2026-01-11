@@ -1,7 +1,8 @@
-import parser_lib.io as io
-import parser_lib.helpers as helpers
-import parser_lib.game_files as game_files
-import parser_lib.constants as const
+import lib.io as io
+import lib.general as general
+import lib.helpers.enemy as enemy
+import lib.game_files as game_files
+import lib.constants as const
 import os
 
 # Output file
@@ -29,15 +30,15 @@ duplicate_name_map = {}
 
 for enemy_id, display_data in enemy_display.items():
     name_id = display_data.get("name", {}).get("id")
-    enemy_name = helpers.resolve_text(language["en"], name_id)
-    enemy_name_clean = helpers.sanitize_name(enemy_name)
+    enemy_name = general.resolve_text(language["en"], name_id)
+    enemy_name_clean = general.sanitize_name(enemy_name)
     enemy_name_counts[enemy_name_clean] = enemy_name_counts.get(enemy_name_clean, 0) + 1
     duplicate_name_map.setdefault(enemy_name_clean, []).append(enemy_id)
 
 duplicate_name_map = {k: v for k, v in duplicate_name_map.items() if len(v) > 1}
 
 # Stuff for enemy nav
-enemy_aggeloi, enemy_landbreakers, enemy_pirates, enemy_wildlife = helpers.build_enemy_nav_lists(enemy_attr, enemy_display, enemy_group, wiki_group, enemy_type, language, enemy_name_counts, duplicate_name_map)
+enemy_aggeloi, enemy_landbreakers, enemy_pirates, enemy_wildlife = enemy.build_enemy_nav_lists(enemy_attr, enemy_display, enemy_group, wiki_group, enemy_type, language, enemy_name_counts, duplicate_name_map)
 
 # Make that sausage
 with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
@@ -48,46 +49,46 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
         # Enemy names
         name_id = display_data.get("name", {}).get("id")
-        enemy_name = helpers.resolve_text(language["en"], name_id)
-        enemy_name_clean = helpers.sanitize_name(enemy_name)
-        enemy_name_image = helpers.sanitize_image_name(enemy_name)
+        enemy_name = general.resolve_text(language["en"], name_id)
+        enemy_name_clean = general.sanitize_name(enemy_name)
+        enemy_name_image = general.sanitize_image_name(enemy_name)
 
         # Append the ID if there are duplicates but just the last part of it
-        enemy_name, enemy_name_clean, enemy_name_image, enemy_alternate_text = helpers.resolve_enemy_names(enemy_id, enemy_name, enemy_name_clean, enemy_name_image, enemy_name_counts, duplicate_name_map)
-        cn_name = helpers.resolve_text(language["cn"], name_id)
-        tc_name = helpers.resolve_text(language["tc"], name_id)
-        jp_name = helpers.resolve_text(language["jp"], name_id)
-        kr_name = helpers.resolve_text(language["kr"], name_id)
-        sp_name = helpers.resolve_text(language["sp"], name_id)
-        ru_name = helpers.resolve_text(language["ru"], name_id)
+        enemy_name, enemy_name_clean, enemy_name_image, enemy_alternate_text = enemy.resolve_enemy_names(enemy_id, enemy_name, enemy_name_clean, enemy_name_image, enemy_name_counts, duplicate_name_map)
+        cn_name = general.resolve_text(language["cn"], name_id)
+        tc_name = general.resolve_text(language["tc"], name_id)
+        jp_name = general.resolve_text(language["jp"], name_id)
+        kr_name = general.resolve_text(language["kr"], name_id)
+        sp_name = general.resolve_text(language["sp"], name_id)
+        ru_name = general.resolve_text(language["ru"], name_id)
 
         # Enemy description
         desc_id = display_data.get("description", {}).get("id")
-        enemy_desc = helpers.resolve_text(language["en"], desc_id)
+        enemy_desc = general.resolve_text(language["en"], desc_id)
 
         # Enemy species
-        enemy_species = helpers.resolve_enemy_species(enemy_id, enemy_group, wiki_group, language)
+        enemy_species = enemy.resolve_enemy_species(enemy_id, enemy_group, wiki_group, language)
 
         # Enemy type
         display_type_id = display_data.get("displayType")
         type_data = enemy_type.get(str(display_type_id), {})
         type_name_id = type_data.get("name", {}).get("id")
-        enemy_class = helpers.resolve_text(language["en"], type_name_id)
+        enemy_class = general.resolve_text(language["en"], type_name_id)
 
         # Enemy abilities
-        enemy_ability_text = helpers.resolve_enemy_abilities(display_data, enemy_ability, language)
+        enemy_ability_text = enemy.resolve_enemy_abilities(display_data, enemy_ability, language)
 
         # Enemy locations
-        enemy_location = helpers.resolve_enemy_locations(display_data, distribution_info, language)
+        enemy_location = enemy.resolve_enemy_locations(display_data, distribution_info, language)
 
         # Enemy drops
-        enemy_drop_item = helpers.resolve_enemy_drops(enemy_id, enemy_drop, item_table, language)
+        enemy_drop_item = enemy.resolve_enemy_drops(enemy_id, enemy_drop, item_table, language)
 
         # Enemy stats
-        enemy_hp, enemy_atk, enemy_def = helpers.resolve_enemy_level_stats(attr_data)
+        enemy_hp, enemy_atk, enemy_def = enemy.resolve_enemy_level_stats(attr_data)
 
         # Level independent stats
-        enemy_weight, enemy_attack_range, enemy_stagger_hp, enemy_stagger_time, enemy_stagger_damage, physical_resist, nature_resist, cryo_resist, electric_resist, heat_resist, aether_resist = helpers.resolve_enemy_independent_stats(attr_data)
+        enemy_weight, enemy_attack_range, enemy_stagger_hp, enemy_stagger_time, enemy_stagger_damage, physical_resist, nature_resist, cryo_resist, electric_resist, heat_resist, aether_resist = enemy.resolve_enemy_independent_stats(attr_data)
 
         # Output
         out.write(f"""{{{{-start-}}}}

@@ -1,7 +1,8 @@
-import parser_lib.io as io
-import parser_lib.helpers as helpers
-import parser_lib.game_files as game_files
-import parser_lib.constants as const
+import lib.io as io
+import lib.general as general
+import lib.helpers.weapon as weapon
+import lib.game_files as game_files
+import lib.constants as const
 import os
 
 # Output file
@@ -32,7 +33,7 @@ for weapon_data in weapon_basic.values():
 skill_lines = []
 seen_lua = set()
 for sid in sorted(all_skill_ids):
-    lua = helpers.build_weapon_skill_lua(sid, skill_patch, language)
+    lua = weapon.build_weapon_skill_lua(sid, skill_patch, language)
     if lua and lua not in seen_lua:
         skill_lines.append(lua)
         seen_lua.add(lua)
@@ -41,7 +42,7 @@ skill_lines.sort(key=lambda x: x.split('"]')[0].strip('["'))
 weapon_skill_data = ",\n    ".join(skill_lines)
 
 # Weapon nav stuff
-weapon_sword, weapon_great_sword, weapon_polearm, weapon_handcannon, weapon_arts_unit = helpers.build_weapon_nav_lists(weapon_basic, item_table, language)
+weapon_sword, weapon_great_sword, weapon_polearm, weapon_handcannon, weapon_arts_unit = weapon.build_weapon_nav_lists(weapon_basic, item_table, language)
 
 # Make that sausage
 with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
@@ -51,46 +52,46 @@ with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
             continue
 
         source_ids = item_data.get("obtainWayIds", [])
-        source_text = helpers.resolve_sources(source_ids, system_jump_table, language)
+        source_text = general.resolve_sources(source_ids, system_jump_table, language)
         
         # Weapon names
         name_id = item_data.get("name", {}).get("id")
-        weapon_name = helpers.resolve_text(language["en"], name_id)
-        weapon_name_clean = helpers.sanitize_name(weapon_name)
-        weapon_name_image = helpers.sanitize_image_name(weapon_name)
-        cn_name = helpers.resolve_text(language["cn"], name_id)
-        tc_name = helpers.resolve_text(language["tc"], name_id)
-        jp_name = helpers.resolve_text(language["jp"], name_id)
-        kr_name = helpers.resolve_text(language["kr"], name_id)
-        sp_name = helpers.resolve_text(language["sp"], name_id)
-        ru_name = helpers.resolve_text(language["ru"], name_id)
+        weapon_name = general.resolve_text(language["en"], name_id)
+        weapon_name_clean = general.sanitize_name(weapon_name)
+        weapon_name_image = general.sanitize_image_name(weapon_name)
+        cn_name = general.resolve_text(language["cn"], name_id)
+        tc_name = general.resolve_text(language["tc"], name_id)
+        jp_name = general.resolve_text(language["jp"], name_id)
+        kr_name = general.resolve_text(language["kr"], name_id)
+        sp_name = general.resolve_text(language["sp"], name_id)
+        ru_name = general.resolve_text(language["ru"], name_id)
 
         # Weapon descriptions. desc and decoDesc are the tooltip flavor text. weaponDesc is the Basic Info section.
-        desc = helpers.resolve_text(language["en"], item_data.get("desc", {}).get("id"))
-        deco_desc = helpers.resolve_text(language["en"], item_data.get("decoDesc", {}).get("id"))
-        weapon_desc = helpers.resolve_text(language["en"], weapon_data.get("weaponDesc", {}).get("id")) or ""
+        desc = general.resolve_text(language["en"], item_data.get("desc", {}).get("id"))
+        deco_desc = general.resolve_text(language["en"], item_data.get("decoDesc", {}).get("id"))
+        weapon_desc = general.resolve_text(language["en"], weapon_data.get("weaponDesc", {}).get("id")) or ""
         weapon_desc = weapon_desc.replace("\n", "<br>")
 
         # Weapon type and rarity
-        weapon_type = helpers.get_weapon_type(weapon_id)
+        weapon_type = weapon.get_weapon_type(weapon_id)
         rarity = weapon_data.get("rarity", "")
 
         # Weapon skills
         weapon_skill_ids = weapon_data.get("weaponSkillList", [])
-        resolved_skills = [helpers.resolve_skill_name(sid, skill_patch, language) for sid in weapon_skill_ids if sid]
+        resolved_skills = [weapon.resolve_skill_name(sid, skill_patch, language) for sid in weapon_skill_ids if sid]
 
         weapon_potential_id = weapon_data.get("weaponPotentialSkill", "")
-        resolved_potential = helpers.resolve_skill_name(weapon_potential_id, skill_patch, language)
+        resolved_potential = weapon.resolve_skill_name(weapon_potential_id, skill_patch, language)
 
         # Tuning items
-        break_items = helpers.resolve_tuning_items(weapon_id, weapon_basic, breakthrough_table, item_table, language)
+        break_items = weapon.resolve_tuning_items(weapon_id, weapon_basic, breakthrough_table, item_table, language)
         t_values = ["", "", "", ""]
         for i in range(min(4, len(break_items))):
             t_values[i] = break_items[i]
 
         # Base atk
         level_template_id = weapon_data.get("levelTemplateId")
-        batk_values = helpers.get_batk_values(level_template_id, weapon_upgrade_table)
+        batk_values = weapon.get_batk_values(level_template_id, weapon_upgrade_table)
         batk_str = ", ".join(batk_values)
 
         # Output

@@ -1,7 +1,8 @@
-import parser_lib.io as io
-import parser_lib.helpers as helpers
-import parser_lib.game_files as game_files
-import parser_lib.constants as const
+import lib.io as io
+import lib.general as general
+import lib.helpers.operator as operator
+import lib.game_files as game_files
+import lib.constants as const
 import os
 import re
 import mwparserfromhell
@@ -50,8 +51,8 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
         # Operator names
         name_id = operator_data["name"]["id"]
-        operator_name = helpers.resolve_text(language["en"], name_id)
-        operator_name_clean = helpers.sanitize_name(operator_name)
+        operator_name = general.resolve_text(language["en"], name_id)
+        operator_name_clean = general.sanitize_name(operator_name)
 
         # mw.cleric input
         wiki_params = {p: "" for p in ['realname', 'fileno', 'theme', 'illustrator', 'age', 'experience', 'birthplace', 'height']}
@@ -76,64 +77,64 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         if operator_name == "Endministrator":
             operator_display_id = "chr_0003_endminf, chr_0002_endminm"
             operator_name_image = (
-                f"{helpers.sanitize_image_name(operator_name)}_(Female)_Splash Art.png:Female;\n"
-                f"{helpers.sanitize_image_name(operator_name)}_(Male)_Splash Art.png:Male"
+                f"{general.sanitize_image_name(operator_name)}_(Female)_Splash Art.png:Female;\n"
+                f"{general.sanitize_image_name(operator_name)}_(Male)_Splash Art.png:Male"
             )
         else:
             operator_display_id = operator_id
-            operator_name_image = f"{helpers.sanitize_image_name(operator_name)} Splash Art.png"
-        cn_name = helpers.resolve_text(language["cn"], name_id)
-        tc_name = helpers.resolve_text(language["tc"], name_id)
-        jp_name = helpers.resolve_text(language["jp"], name_id)
-        kr_name = helpers.resolve_text(language["kr"], name_id)
-        sp_name = helpers.resolve_text(language["sp"], name_id)
-        ru_name = helpers.resolve_text(language["ru"], name_id)
+            operator_name_image = f"{general.sanitize_image_name(operator_name)} Splash Art.png"
+        cn_name = general.resolve_text(language["cn"], name_id)
+        tc_name = general.resolve_text(language["tc"], name_id)
+        jp_name = general.resolve_text(language["jp"], name_id)
+        kr_name = general.resolve_text(language["kr"], name_id)
+        sp_name = general.resolve_text(language["sp"], name_id)
+        ru_name = general.resolve_text(language["ru"], name_id)
 
         # CV names
-        cn_cv = helpers.resolve_cv_name(operator_data, language, "ChiCVName")
-        jp_cv = helpers.resolve_cv_name(operator_data, language, "JapCVName")
-        en_cv = helpers.resolve_cv_name(operator_data, language, "EngCVName")
-        kr_cv = helpers.resolve_cv_name(operator_data, language, "KorCVName")
+        cn_cv = operator.resolve_cv_name(operator_data, language, "ChiCVName")
+        jp_cv = operator.resolve_cv_name(operator_data, language, "JapCVName")
+        en_cv = operator.resolve_cv_name(operator_data, language, "EngCVName")
+        kr_cv = operator.resolve_cv_name(operator_data, language, "KorCVName")
 
         # Operator info
         rarity = operator_data.get("rarity", "")
         prof_id = operator_data.get("profession")
         prof_name_id = char_profession[str(prof_id)]["name"]["id"]
-        profession = helpers.resolve_text(language["en"], prof_name_id)
+        profession = general.resolve_text(language["en"], prof_name_id)
         profession = "Supporter" if profession == "Support" else profession
         weapon = const.WEAPON_TYPE.get(operator_data.get("weaponType"), "")
         element = const.ELEMENT_TYPE.get(operator_data.get("charTypeId"), "")
-        faction = helpers.resolve_operator_faction(operator_id, char_tags, tag_data, language)
-        operator_tags = helpers.resolve_operator_tags(operator_data, char_battle_tags, language)
-        starting_operator = helpers.get_starting_operator(operator_id)
-        banner = helpers.resolve_operator_gacha_pools(operator_id, gacha_pool_content, gacha_pool, language)
-        operator_quote = helpers.get_operator_quote(operator_data, operator_id, language)
+        faction = operator.resolve_operator_faction(operator_id, char_tags, tag_data, language)
+        operator_tags = operator.resolve_operator_tags(operator_data, char_battle_tags, language)
+        starting_operator = operator.get_starting_operator(operator_id)
+        banner = operator.resolve_operator_gacha_pools(operator_id, gacha_pool_content, gacha_pool, language)
+        operator_quote = operator.get_operator_quote(operator_data, operator_id, language)
 
         # Operator stats
         mainAttr = const.ATTRIBUTE_TYPE.get(operator_data.get("mainAttrType"), "")
         subAttr = const.ATTRIBUTE_TYPE.get(operator_data.get("subAttrType"), "")
-        extracted_stats = helpers.get_operator_attributes(char_table, operator_id)
-        operator_stats = helpers.build_operator_stats_block(extracted_stats)
+        extracted_stats = operator.get_operator_attributes(char_table, operator_id)
+        operator_stats = operator.build_operator_stats_block(extracted_stats)
 
         # Operator infobox
-        full_text, gender, birthdate, race, infection, strength, skill, tactical, originium = helpers.get_operator_profile_records(operator_data, language)
-        hobbyname1, hobbyname2, expertname1, expertname2, hobbydesc1, hobbydesc2, expertdesc1, expertdesc2, prefer = helpers.get_operator_hobbies_and_expertise(operator_id, char_tags, tag_data, char_tag_des, language)
+        full_text, gender, birthdate, race, infection, strength, skill, tactical, originium = operator.get_operator_profile_records(operator_data, language)
+        hobbyname1, hobbyname2, expertname1, expertname2, hobbydesc1, hobbydesc2, expertdesc1, expertdesc2, prefer = operator.get_operator_hobbies_and_expertise(operator_id, char_tags, tag_data, char_tag_des, language)
 
         # Operator potentials and rank up items
-        operator_potentials = helpers.get_operator_potentials(operator_id, char_potential, potential_effect, language, enums_table)
-        operator_upgrade_items = helpers.get_operator_upgrade_items(operator_id, char_growth, item_table, language)
+        operator_potentials = operator.get_operator_potentials(operator_id, char_potential, potential_effect, language, enums_table)
+        operator_upgrade_items = operator.get_operator_upgrade_items(operator_id, char_growth, item_table, language)
 
         # Operator skills
-        operator_combat_skills = helpers.get_operator_combat_skills(operator_id, char_growth, skill_patch, language, weapon)
-        operator_skill_items = helpers.get_operator_skill_items(operator_id, char_growth, item_table, language)
+        operator_combat_skills = operator.get_operator_combat_skills(operator_id, char_growth, skill_patch, language, weapon)
+        operator_skill_items = operator.get_operator_skill_items(operator_id, char_growth, item_table, language)
 
         # Operator Talents and Base Skills
-        operator_mainattr_talent = helpers.main_attribute_talent(operator_id, char_growth, language, mainAttr)
-        operator_unique_talent = helpers.operator_passive_talents(operator_id, operator_name, char_growth, potential_effect, language, enums_table)
-        operator_gear_talent = helpers.operator_outfit_talent(operator_id, char_growth, language)
-        operator_talent_costs = helpers.operator_talent_costs(operator_id, char_growth, item_table, language, mainAttr)
-        operator_base_skills = helpers.operator_base_skills(operator_id, char_growth, base_skill, language)
-        base_skill_costs = helpers.operator_base_talent_costs(operator_id, char_growth, item_table, base_skill, language)
+        operator_mainattr_talent = operator.main_attribute_talent(operator_id, char_growth, language, mainAttr)
+        operator_unique_talent = operator.operator_passive_talents(operator_id, operator_name, char_growth, potential_effect, language, enums_table)
+        operator_gear_talent = operator.operator_outfit_talent(operator_id, char_growth, language)
+        operator_talent_costs = operator.operator_talent_costs(operator_id, char_growth, item_table, language, mainAttr)
+        operator_base_skills = operator.operator_base_skills(operator_id, char_growth, base_skill, language)
+        base_skill_costs = operator.operator_base_talent_costs(operator_id, char_growth, item_table, base_skill, language)
 
         # Output
         out.write(f"""{{{{-start-}}}}
