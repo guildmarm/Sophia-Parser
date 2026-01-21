@@ -32,7 +32,7 @@ potential_effect = io.load_json(paths["potential_effect"])
 tag_data = io.load_json(paths["tag_data"])
 gacha_pool_content = io.load_json(paths["gacha_pool_content"])
 gacha_pool = io.load_json(paths["gacha_pool"])
-enums_table = io.load_json(paths["enums_table"])
+enums_table = io.load_json(paths["pot_effect_enums"])
 
 # Load language files
 language = io.load_languages(const.INPUT_DIR)

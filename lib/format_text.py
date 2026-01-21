@@ -12,6 +12,10 @@ BA_PULSE = re.compile(r"<@ba\.pulse>(.*?)</>") # Electric Damage
 BA_FIRE = re.compile(r"<@ba\.fire>(.*?)</>") # Heat Damage
 BA_NATUR = re.compile(r"<@ba\.natur>(.*?)</>") # Nature Damage
 BA_ETHER = re.compile(r"<@ba\.ether>(.*?)</>") # Aether Damage
+TIPS_ORANGE = re.compile(r"<@tips\.orange>(.*?)</>") # Item help text
+TIPS_PURPLE = re.compile(r"<@tips\.purple>(.*?)</>") # Item help text
+TIPS_KEY = re.compile(r"<@tips\.key>(.*?)</>") # Item help text
+OBT_KEY = re.compile(r"<@obt\.key>(.*?)</>") # Item help text
 
 # Text that uses the {{Glossary}} template
 BA_LASTCOMBO = re.compile(r"<#ba\.lastcombo>(.*?)</>")
@@ -83,6 +87,10 @@ def efdb_format(text: str) -> str:
     text = BA_FIRE.sub(r"{{Color|\1|3}}", text) # Heat Damage
     text = BA_NATUR.sub(r"{{Color|\1|5}}", text) # Nature Damage
     text = BA_ETHER.sub(r"{{Color|\1|1e}}", text) # Aether Damage
+    text = TIPS_ORANGE.sub(r"{{Color|\1|1a}}", text) # Item help text
+    text = TIPS_PURPLE.sub(r"{{Color|\1|1e}}", text) # Item help text
+    text = TIPS_KEY.sub(lambda m: f"[[{m.group(1).replace('[', '(').replace(']', ')')}]]", text) # Item help text
+    text = OBT_KEY.sub(lambda m: f"[[{m.group(1).replace('[', '(').replace(']', ')')}]]", text) # Item help text
 
     # Text that uses the {{Glossary}} template
     text = BA_LASTCOMBO.sub(r"{{G|Final Strike|\1}}", text)
@@ -156,6 +164,10 @@ def module_format(text: str) -> str:
     #text = BA_FIRE.sub(r"{{Color|\1|3}}", text) # Heat Damage
     #text = BA_NATUR.sub(r"{{Color|\1|5}}", text) # Nature Damage
     #text = BA_ETHER.sub(r"{{Color|\1|1e}}", text) # Aether Damage
+    text = TIPS_ORANGE.sub(r"{{Color|\1|1a}}", text) # Item help text
+    text = TIPS_PURPLE.sub(r"{{Color|\1|1e}}", text) # Item help text
+    text = TIPS_KEY.sub(lambda m: f"[[{m.group(1).replace('[', '(').replace(']', ')')}]]", text) # Item help text
+    text = OBT_KEY.sub(lambda m: f"[[{m.group(1).replace('[', '(').replace(']', ')')}]]", text) # Item help text
 
     # Text that uses the {{Glossary}} template
     text = BA_LASTCOMBO.sub(r"{{G|Final Strike|\1}}", text)

@@ -8,7 +8,6 @@ import os
 # Output file
 WEAPON_PAGE_OUTPUT = os.path.join(const.OUTPUT_DIR, "full_weapon_page_data.txt")
 WEAPON_SKILL_MODULE_OUTPUT = os.path.join(const.OUTPUT_DIR, "module_weapon_skill_data.txt")
-WEAPON_NAV_TEMPLATE_OUTPUT = os.path.join(const.OUTPUT_DIR, "template_weapon_nav_data.txt")
 os.makedirs(const.OUTPUT_DIR, exist_ok=True)
 
 paths = game_files.build_paths(const.INPUT_DIR)
@@ -40,9 +39,6 @@ for sid in sorted(all_skill_ids):
 
 skill_lines.sort(key=lambda x: x.split('"]')[0].strip('["'))
 weapon_skill_data = ",\n    ".join(skill_lines)
-
-# Weapon nav stuff
-weapon_sword, weapon_great_sword, weapon_polearm, weapon_handcannon, weapon_arts_unit = weapon.build_weapon_nav_lists(weapon_basic, item_table, language)
 
 # Make that sausage
 with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
@@ -171,42 +167,6 @@ for _, v in pairs(data) do
 end
 
 return data
-
-{{{{-stop-}}}}
-
-""")
-
-# Make that sausage YET AGAIN (This is for the Weapon Nav template)
-with open(WEAPON_NAV_TEMPLATE_OUTPUT, "w", encoding="utf-8") as out:
-        out.write(f"""{{{{-start-}}}}
-'''Template:Weapons'''
-<onlyinclude>{{{{Navbox
-| template = Weapons
-
-| title = Weapons
-| State = {{{{{{state|expanded}}}}}}
-
-| group1 = Sword
-| list1 = 
-{weapon_sword}
-
-| Group 2 = Great Sword
-| List 2 = 
-{weapon_great_sword}
-
-| Group 3 = Polearm
-| List 3 = 
-{weapon_polearm}
-
-| Group 4 = Handcannon
-| List 4 = 
-{weapon_handcannon}
-
-| Group 5 = Arts Unit
-| List 5 = 
-{weapon_arts_unit}
-}}}}</onlyinclude><noinclude>
-[[Category:Navboxes]]</noinclude>
 
 {{{{-stop-}}}}
 
