@@ -2,6 +2,10 @@ import os
 
 # Game Files
 ITEM_TABLE = "ItemTable.json"
+ITEM_TYPE = "ItemTypeTable.json"
+ITEM_CHEST = "UsableItemChestTable.json"
+USE_ITEM = "UseItemTable.json"
+REWARD_TABLE = "RewardTable.json"
 ENEMY_ATTRIBUTE = "EnemyAttributeTemplateTable.json"
 ENEMY_ABILITY = "EnemyAbilityDescTable.json"
 ENEMY_DISPLAY = "EnemyTemplateDisplayInfoTable.json"
@@ -15,6 +19,7 @@ SKILL_PATCH = "SkillPatchTable.json"
 WEAPON_BREAKTHROUGH = "WeaponBreakThroughTemplateTable.json"
 WEAPON_UPGRADE = "WeaponUpgradeTemplateTable.json"
 SYSTEM_JUMP = "SystemJumpTable.json"
+EQUIP_ITEM = "EquipItemTable.json"
 EQUIP_FORMULA = "EquipFormulaTable.json"
 EQUIP_PACK_FORMULA = "EquipPackFormulaTable.json"
 EQUIP_PACK = "EquipPackTable.json"
@@ -35,13 +40,17 @@ BASE_SKILL = "SpaceshipSkillTable.json"
 TAG_DATA = "TagDataTable.json"
 GACHA_POOL_CONTENT = "GachaCharPoolContentTable.json"
 GACHA_POOL = "GachaCharPoolTable.json"
-ENUMS_TABLE = "Enums.json"
+POTENTIALS_ENUMS = os.path.join("Enums", "PotentialTalentEffectTable_enum.json")
 
 
 
 def build_paths(input_dir: str) -> dict[str, str]:
     return {
         "item_table": os.path.join(input_dir, ITEM_TABLE),
+        "item_type": os.path.join(input_dir, ITEM_TYPE),
+        "item_chest": os.path.join(input_dir, ITEM_CHEST),
+        "use_item": os.path.join(input_dir, USE_ITEM),
+        "reward_table": os.path.join(input_dir, REWARD_TABLE),
         "enemy_attribute": os.path.join(input_dir, ENEMY_ATTRIBUTE),
         "enemy_ability": os.path.join(input_dir, ENEMY_ABILITY),
         "enemy_display": os.path.join(input_dir, ENEMY_DISPLAY),
@@ -55,6 +64,7 @@ def build_paths(input_dir: str) -> dict[str, str]:
         "weapon_breakthrough": os.path.join(input_dir, WEAPON_BREAKTHROUGH),
         "weapon_upgrade": os.path.join(input_dir, WEAPON_UPGRADE),
         "system_jump": os.path.join(input_dir, SYSTEM_JUMP),
+        "equip_item": os.path.join(input_dir, EQUIP_ITEM),
         "equip_formula": os.path.join(input_dir, EQUIP_FORMULA),
         "equip_pack_formula": os.path.join(input_dir, EQUIP_PACK_FORMULA),
         "equip_pack": os.path.join(input_dir, EQUIP_PACK),
@@ -75,5 +85,5 @@ def build_paths(input_dir: str) -> dict[str, str]:
         "tag_data": os.path.join(input_dir, TAG_DATA),
         "gacha_pool_content": os.path.join(input_dir, GACHA_POOL_CONTENT),
         "gacha_pool": os.path.join(input_dir, GACHA_POOL),
-        "enums_table": os.path.join(input_dir, ENUMS_TABLE),
+        "pot_effect_enums": os.path.join(input_dir, POTENTIALS_ENUMS),
     }

@@ -343,7 +343,7 @@ def get_operator_potentials(operator_id, char_potential, potential_effect, langu
                 param_value = data.get("skillParamModifier", {}).get("paramValue")
                 if param_type is not None and param_value is not None:
                     enum_name = ""
-                    for enum_block in enums_table.values():
+                    for enum_block in enums_table:
                         if enum_block.get("name") == "ModifiableSkillParam":
                             for e in enum_block.get("enums", []):
                                 if e.get("value") == param_type:
@@ -839,7 +839,7 @@ def operator_passive_talents(operator_id, operator_name, char_growth, potential_
                     param_value = data.get("skillParamModifier", {}).get("paramValue")
                     if param_type is not None and param_value is not None:
                         enum_name = ""
-                        for enum_block in enums_table.values():
+                        for enum_block in enums_table:
                             if enum_block.get("name") == "ModifiableSkillParam":
                                 for e in enum_block.get("enums", []):
                                     if e.get("value") == param_type:
