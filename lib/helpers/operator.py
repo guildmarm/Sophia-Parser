@@ -160,7 +160,7 @@ def get_operator_profile_records(operator_data, language, lang="en"):
                 birthdate_value = match_birthdate.group(1).strip()
             match_race = re.search(r"RACE:\s*(.+)", text)
             if match_race:
-                race_value = f"[[{match_race.group(1).strip()}]]"
+                race_value = f"{match_race.group(1).strip()}"
             match_infection = re.search(r"\[ORIPATHY INFECTION STATUS\]\s*\n(.+)", text)
             if match_infection:
                 infection_value = match_infection.group(1).strip()
