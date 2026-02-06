@@ -3,6 +3,7 @@ import lib.general as general
 import lib.helpers.operator as operator
 import lib.game_files as game_files
 import lib.constants as const
+import time
 import os
 import re
 import mwparserfromhell
@@ -247,3 +248,5 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        # Short sleep between parses so there's no error with timeouts on the wiki API
+        time.sleep(3)

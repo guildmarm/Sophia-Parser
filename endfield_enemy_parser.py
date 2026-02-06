@@ -3,7 +3,14 @@ import lib.general as general
 import lib.helpers.enemy as enemy
 import lib.game_files as game_files
 import lib.constants as const
+import time
 import os
+import re
+import mwparserfromhell
+from mwcleric.wiki_client import WikiClient
+
+# Set endfield wiki as mw.cleric site
+site = WikiClient("endfield.wiki.gg")
 
 # Output file
 ENEMY_PAGE_OUTPUT = os.path.join(const.OUTPUT_DIR, "full_enemy_page_data.txt")
@@ -24,6 +31,12 @@ wiki_group = io.load_json(paths["wiki_group"])
 
 # Load language files
 language = io.load_languages(const.INPUT_DIR)
+
+# mw.cleric helpers
+def get_wiki_section(text, header):
+    pattern = rf"==\s*{header}\s*==\s*(.*?)(?=\n==|$)"
+    match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+    return match.group(1).strip() if match else ""
 
 enemy_name_counts = {}
 duplicate_name_map = {}
@@ -49,6 +62,15 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         enemy_name = general.resolve_text(language["en"], name_id)
         enemy_name_clean = general.sanitize_name(enemy_name)
         enemy_name_image = general.sanitize_image_name(enemy_name)
+
+        # mw.cleric input
+        wiki_changelog = ""
+
+        page = site.client.pages[enemy_name]
+        if page.exists:
+            wikitext = page.text()
+            parsed_code = mwparserfromhell.parse(wikitext)
+            wiki_changelog = get_wiki_section(wikitext, "Changelog")
 
         # Append the ID if there are duplicates but just the last part of it
         enemy_name, enemy_name_clean, enemy_name_image, enemy_alternate_text = enemy.resolve_enemy_names(enemy_id, enemy_name, enemy_name_clean, enemy_name_image, enemy_name_counts, duplicate_name_map)
@@ -131,6 +153,9 @@ The '''{enemy_name}''' is a [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]
 |drops = {enemy_drop_item}
 |addendum = }}}}
 
+==Changelog==
+{wiki_changelog}
+
 ==Navigation==
 {{{{Enemies}}}}
 [[Category:{enemy_class} enemies]]
@@ -138,3 +163,5 @@ The '''{enemy_name}''' is a [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]
 {{{{-stop-}}}}
 
 """)
+        # Short sleep between parses so there's no error with timeouts on the wiki API
+        time.sleep(3)

@@ -1891,4 +1891,6 @@ ITEM_LIST = [
     "wpn_sword_0015",
     "wpn_sword_0019",
     "wpn_sword_0021",
+    # Added 2026-02-05
+    "item_case_char_selfselect_standard",
 ]
