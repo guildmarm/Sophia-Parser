@@ -1,5 +1,5 @@
 from lib.io import load_json
-from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS
+from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT
 from lib.format_text import module_format, efdb_format
 import lib.general as general
 from collections import OrderedDict, defaultdict
@@ -154,56 +154,10 @@ def resolve_enemy_independent_stats(attr_data):
     heat_resist = independent_stats.get(84, "")
     aether_resist = independent_stats.get(85, "")
 
+    enemy_sp_gain = attr_data.get("breakingAttackedAtbObtain", "")
+
     return (
         enemy_weight, enemy_attack_range, enemy_stagger_hp, enemy_stagger_time, 
         enemy_stagger_damage, physical_resist, nature_resist, cryo_resist, 
-        electric_resist, heat_resist, aether_resist
+        electric_resist, heat_resist, aether_resist, enemy_sp_gain
     )
-
-def build_enemy_nav_lists(enemy_attr, enemy_display, enemy_group, wiki_group, enemy_type, language, enemy_name_counts, duplicate_name_map, lang="en"):
-    class_weights = {
-        "Boss": 5,
-        "Alpha": 4,
-        "Elite": 3,
-        "Advanced": 2,
-        "Common": 1
-    }
-
-    temp_aggeloi = []
-    temp_landbreakers = []
-    temp_pirates = []
-    temp_wildlife = []
-
-    for enemy_id, attr_data in enemy_attr.items():
-        display_data = enemy_display.get(enemy_id)
-        if not display_data:
-            continue
-
-        enemy_species = resolve_enemy_species(enemy_id, enemy_group, wiki_group, language, lang)
-        
-        name_id = display_data.get("name", {}).get("id")
-        enemy_name = general.resolve_text(language[lang], name_id)
-        enemy_name, _, _, _ = resolve_enemy_names(enemy_id, enemy_name, general.sanitize_name(enemy_name), general.sanitize_image_name(enemy_name), enemy_name_counts, duplicate_name_map)
-        
-        display_type_id = display_data.get("displayType")
-        type_data = enemy_type.get(str(display_type_id), {})
-        type_name_id = type_data.get("name", {}).get("id")
-        enemy_class = general.resolve_text(language[lang], type_name_id)
-        
-        entry_text = f"{{{{Enemy Icon|{enemy_name}|{enemy_class}}}}}"
-        weight = class_weights.get(enemy_class, 0)
-
-        if enemy_species == "Aggeloi":
-            temp_aggeloi.append((weight, enemy_name, entry_text))
-        elif enemy_species == "Landbreakers":
-            temp_landbreakers.append((weight, enemy_name, entry_text))
-        elif enemy_species == "Cangzei Pirates":
-            temp_pirates.append((weight, enemy_name, entry_text))
-        elif enemy_species == "Wildlife":
-            temp_wildlife.append((weight, enemy_name, entry_text))
-
-    def finalize_list(temp_list):
-        sorted_items = sorted(temp_list, key=lambda x: (-x[0], x[1]))
-        return " &bull; ".join([e[2] for e in sorted_items])
-
-    return finalize_list(temp_aggeloi), finalize_list(temp_landbreakers), finalize_list(temp_pirates), finalize_list(temp_wildlife)

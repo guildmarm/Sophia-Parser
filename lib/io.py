@@ -4,7 +4,7 @@ from .constants import LANGUAGE_FILES
 
 
 def load_json(path):
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8-sig") as f:
         return json.load(f)
 
 

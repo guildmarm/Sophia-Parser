@@ -22,7 +22,7 @@ def sanitize_name(name):
 def sanitize_image_name(name):
     if not name:
         return ""
-    return name.replace(":", "").replace(" ", "_")
+    return name.replace(":", "").replace(" ", "_").replace("[", "(").replace("]", ")").replace("{", "(").replace("}", ")")
 
 # Source of system_jump_table values
 def resolve_sources(source_ids, system_jump_table, language, lang="en"):
