@@ -3,6 +3,7 @@ import lib.general as general
 import lib.helpers.item as item
 import lib.game_files as game_files
 import lib.constants as const
+import lib.item_list as item_list
 from lib.format_text import efdb_format
 import os
 
@@ -45,6 +46,9 @@ reward_table = io.load_json(paths["reward_table"])
 system_jump_table = io.load_json(paths["system_jump"])
 skill_patch = io.load_json(paths["skill_patch"])
 
+# Update item exclusion list
+newly_processed_items = []
+
 # Load language files
 language = io.load_languages(const.INPUT_DIR)
 
@@ -64,41 +68,16 @@ class GeneralItemInfo:
 
         if name_counts.get(self.name, 0) > 1:
             suffix_map = {
-                "water": " (Water)",
-                "grass_1": " (Jincao)",
-                "grass_2": " (Yazhen)",
-                "xiranite": " (Xiranite)"
+                "water": " (Clean Water)",
+                "grass_1": " (Jincao Solution)",
+                "grass_2": " (Yazhen Solution)",
+                "xiranite": " (Liquid Xiranite)"
             }
             
-            applied_suffix = False
             for key, val in suffix_map.items():
                 if item_id.endswith(key):
                     self.name += val
-                    applied_suffix = True
                     break
-            
-            if not applied_suffix:
-                roman_map = {
-                    "1": "I", 
-                    "2": "II", 
-                    "3": "III", 
-                    "4": "IV", 
-                    "5": "V",
-                    "6": "VI", 
-                    "7": "VII", 
-                    "8": "VIII", 
-                    "9": "IX", 
-                    "10": "X"
-                }
-                
-                num_suffix = ""
-                if item_id.endswith("10"):
-                    num_suffix = roman_map["10"]
-                elif item_id[-1] in roman_map:
-                    num_suffix = roman_map[item_id[-1]]
-                
-                if num_suffix:
-                    self.name += f" ({num_suffix})"
 
         raw_type_id = item_data.get("type")
         self.type = const.ITEM_TYPE_NAME.get(raw_type_id, "")
@@ -108,13 +87,12 @@ class GeneralItemInfo:
             self.item_id_output = f"{item_id}, {item_id.replace('chr_0003_endminf', 'chr_0002_endminm').replace('chr_0003_endmin', 'chr_0002_endminm')}"
             self.image = (
                 f"\n"
-                f"|images = \n"
                 f"{general.sanitize_image_name(self.name)}_{general.sanitize_image_name(self.type)}_(Female).png:Female;\n"
                 f"{general.sanitize_image_name(self.name)}_{general.sanitize_image_name(self.type)}_(Male).png:Male"
             )
         else:
             self.item_id_output = item_id
-            self.image = ""
+            self.image = f"{general.sanitize_image_name(self.name)}.png"
 
         self.cn = general.resolve_text(language["cn"], name_id)
         self.tc = general.resolve_text(language["tc"], name_id)
@@ -134,7 +112,7 @@ class GeneralItemInfo:
 # Employment Contracts
 with open(EMPLOYMENT_CONTRACT_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") != 4 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 4 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -143,7 +121,8 @@ with open(EMPLOYMENT_CONTRACT_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean} (Employment Contract)'''
 {{{{Item infobox
 |name = {info.name} (Employment Contract)
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -167,11 +146,14 @@ with open(EMPLOYMENT_CONTRACT_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Operator Tokens
 with open(OPERATOR_TOKENS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") != 42 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 42 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -182,7 +164,8 @@ with open(OPERATOR_TOKENS_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -193,9 +176,9 @@ with open(OPERATOR_TOKENS_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Potential Tokens|potential token]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -206,11 +189,14 @@ with open(OPERATOR_TOKENS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Operator Snapshots
 with open(OPERATOR_SNAPSHOTS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") != 76 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 76 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -221,7 +207,8 @@ with open(OPERATOR_SNAPSHOTS_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -232,9 +219,9 @@ with open(OPERATOR_SNAPSHOTS_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is an [[Operator Snapshots|operator snapshot]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -245,11 +232,14 @@ with open(OPERATOR_SNAPSHOTS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Progression Materials
 with open(PROGRESSION_MATERIALS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") not in (7, 25, 26, 27, 95, 96) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (7, 25, 26, 27, 95, 96) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -260,7 +250,8 @@ with open(PROGRESSION_MATERIALS_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -271,9 +262,9 @@ with open(PROGRESSION_MATERIALS_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Progression Materials|progression material]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -284,11 +275,14 @@ with open(PROGRESSION_MATERIALS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Rare Materials
 with open(RARE_MATERIALS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") != 8 or item_data.get("showingType") != 16 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 8 or item_data.get("showingType") != 16 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -299,7 +293,8 @@ with open(RARE_MATERIALS_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -310,9 +305,9 @@ with open(RARE_MATERIALS_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Rare Materials|rare material]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -323,11 +318,14 @@ with open(RARE_MATERIALS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Gatherables
 with open(GATHERABLES_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") != 8 or item_data.get("showingType") != 15 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 8 or item_data.get("showingType") != 15 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -338,7 +336,8 @@ with open(GATHERABLES_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -349,9 +348,9 @@ with open(GATHERABLES_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Gatherables|gatherable]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -362,11 +361,14 @@ with open(GATHERABLES_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Naturals
 with open(NATURALS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") != 8 or item_data.get("sortId1") != -80 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 8 or item_data.get("sortId1") != -80 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -377,7 +379,8 @@ with open(NATURALS_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -388,9 +391,9 @@ with open(NATURALS_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Naturals|natural]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 {{{{RecipeTable|ingredient={info.name_clean}}}}}
 ==Acquisition==
 {info.source}
@@ -402,11 +405,14 @@ with open(NATURALS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # AIC Products
 with open(AIC_PRODUCTS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") != 8 or item_data.get("sortId1") not in (-81, -82) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 8 or item_data.get("sortId1") not in (-81, -82) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -417,7 +423,8 @@ with open(AIC_PRODUCTS_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -428,9 +435,9 @@ with open(AIC_PRODUCTS_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is an [[AIC Products|AIC product]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 {{{{RecipeTable|ingredient={info.name_clean}}}}}
 ==Acquisition==
 {info.source}
@@ -443,27 +450,34 @@ with open(AIC_PRODUCTS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Facilities
 with open(FACILITIES_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") not in (9, 10, 11, 54) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (9, 10, 11, 54) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
         if info.is_invalid:
             continue
 
-        if item_data.get("type") != 10:
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 10:
             item_recipe = f"{{{{RecipeTable|product={info.name_clean}}}}}"
         else:
             item_recipe = ""
 
+        facility_power = ""
+        recipe_facility = ""
+
         out.write(f"""{{{{-start-}}}}
 '''{info.name_clean}'''
-{{{{Item infobox
+{{{{Facility infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -471,28 +485,32 @@ with open(FACILITIES_OUTPUT, "w", encoding="utf-8") as out:
 |spname = {info.sp}
 |runame = {info.ru}
 |type = Facilities
-|rarity = {info.rarity}}}}}
-'''{info.name}''' is a [[Facilities|facility]] [[item]] in ''[[Arknights: Endfield]]''.
+|rarity = {info.rarity}
+|power = {facility_power}}}}}
+'''{info.name}''' is an [[AIC]] [[Facilities|facility]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+{recipe_facility}
 ==Acquisition==
 {info.source}
 {item_recipe}
 
 ==Navigation==
-{{{{Items}}}}
+{{{{Facilities}}}}
 [[Category:Facilities]]
 
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Quest Items
 with open(QUEST_ITEMS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") != 13 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 13 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -503,7 +521,8 @@ with open(QUEST_ITEMS_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -514,9 +533,9 @@ with open(QUEST_ITEMS_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Quest Items|quest]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -527,11 +546,14 @@ with open(QUEST_ITEMS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Gifts
 with open(GIFTS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") != 33 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 33 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -542,7 +564,8 @@ with open(GIFTS_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -553,9 +576,9 @@ with open(GIFTS_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Gifts|gift]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -566,11 +589,14 @@ with open(GIFTS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Seeds
 with open(SEEDS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") != 34 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 34 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -581,7 +607,8 @@ with open(SEEDS_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -592,9 +619,9 @@ with open(SEEDS_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Seeds|seed]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -605,11 +632,14 @@ with open(SEEDS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Reward Containers
 with open(CONTAINERS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") not in (43, 60) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (43, 60) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -623,7 +653,8 @@ with open(CONTAINERS_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -634,9 +665,9 @@ with open(CONTAINERS_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Reward Containers|reward container]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 {container_items}
 
 ==Acquisition==
@@ -649,11 +680,14 @@ with open(CONTAINERS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Consumables
 with open(CONSUMABLES_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") not in (48, 52) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (48, 52) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -670,7 +704,8 @@ with open(CONSUMABLES_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -681,9 +716,9 @@ with open(CONSUMABLES_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Consumables|consumable]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 {usage_effect}
 {tactical_effect}
 ==Acquisition==
@@ -697,11 +732,14 @@ with open(CONSUMABLES_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Packages
 with open(PACKAGES_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") != 56 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 56 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -712,7 +750,8 @@ with open(PACKAGES_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -723,9 +762,9 @@ with open(PACKAGES_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Packages|package]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -736,11 +775,14 @@ with open(PACKAGES_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # System Blueprints
 with open(SYSTEM_BLUEPRINTS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") != 64 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 64 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -753,7 +795,8 @@ with open(SYSTEM_BLUEPRINTS_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean} (Blueprint)'''
 {{{{Item infobox
 |name = {info.name} (Blueprint)
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -777,13 +820,16 @@ with open(SYSTEM_BLUEPRINTS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 ### Holding off on this for now because we'll need a unique output. The pages are unified into an Essences page on the wiki rather than individual entries.
 
 ## Essences
 # with open(ESSENCES_OUTPUT, "w", encoding="utf-8") as out:
 #     for item_id, item_data in item_table.items():
-#         if item_data.get("type") != 19 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+#         if item_id in item_list.ITEM_LIST or item_data.get("type") != 19 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
 #             continue
 
 #         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -818,11 +864,14 @@ with open(SYSTEM_BLUEPRINTS_OUTPUT, "w", encoding="utf-8") as out:
 # {{{{-stop-}}}}
 
 # """)
+#        if item_id not in item_list.ITEM_LIST:
+#            item_list.ITEM_LIST.append(item_id)
+#            newly_processed_items.append(item_id)
 
 # Formulas
 with open(FORMULAS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") not in (12, 39, 40, 47) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (12, 39, 40, 47) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -830,14 +879,15 @@ with open(FORMULAS_OUTPUT, "w", encoding="utf-8") as out:
             continue
 
         formula_append = ""
-        if item_data.get("type") == 47:
+        if item_id in item_list.ITEM_LIST or item_data.get("type") == 47:
             formula_append = f" (Formula)"
 
         out.write(f"""{{{{-start-}}}}
 '''{info.name_clean}{formula_append}'''
 {{{{Item infobox
 |name = {info.name}{formula_append}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -848,9 +898,9 @@ with open(FORMULAS_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}{formula_append}''' is a [[Formulas|formula]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -861,11 +911,14 @@ with open(FORMULAS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Photo
 with open(PHOTO_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") not in (58, 70) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (58, 70) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -876,7 +929,8 @@ with open(PHOTO_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -887,9 +941,9 @@ with open(PHOTO_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Photo|photo]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -900,11 +954,14 @@ with open(PHOTO_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Profile
 with open(PROFILE_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") not in (66, 67, 68) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (66, 67, 68) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -912,18 +969,19 @@ with open(PROFILE_OUTPUT, "w", encoding="utf-8") as out:
             continue
 
         profile_append = ""
-        if item_data.get("type") == 66:
+        if item_id in item_list.ITEM_LIST or item_data.get("type") == 66:
             profile_append = f" (Portrait)"
-        elif item_data.get("type") == 67:
+        elif item_id in item_list.ITEM_LIST or item_data.get("type") == 67:
             profile_append = f" (Frame)"
-        elif item_data.get("type") == 68:
+        elif item_id in item_list.ITEM_LIST or item_data.get("type") == 68:
             profile_append = f" (Theme)"
 
         out.write(f"""{{{{-start-}}}}
 '''{info.name_clean}{profile_append}'''
 {{{{Item infobox
 |name = {info.name}{profile_append}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -934,9 +992,9 @@ with open(PROFILE_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}{profile_append}''' is a [[Profile|profile]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -947,11 +1005,14 @@ with open(PROFILE_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Etchspace
 with open(ETCHSPACE_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") not in (71, 72, 74, 75, 77) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (71, 72, 74, 75, 77) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -962,7 +1023,8 @@ with open(ETCHSPACE_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -973,9 +1035,9 @@ with open(ETCHSPACE_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is an [[Etchspace|etchspace]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -986,11 +1048,14 @@ with open(ETCHSPACE_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Sanity
 with open(SANITY_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") not in (21, 22, 63, 97) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (21, 22, 63, 97) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -1001,7 +1066,8 @@ with open(SANITY_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -1012,9 +1078,9 @@ with open(SANITY_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Sanity|sanity]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -1025,11 +1091,14 @@ with open(SANITY_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Currency
 with open(CURRENCY_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") not in (1, 2, 29, 44, 49, 53, 60, 61, 79, 88, 98) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (1, 2, 29, 44, 49, 53, 60, 61, 79, 88, 98) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -1040,7 +1109,8 @@ with open(CURRENCY_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -1051,9 +1121,9 @@ with open(CURRENCY_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Currency|currency]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -1064,11 +1134,14 @@ with open(CURRENCY_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Headhunting
 with open(HEADHUNTING_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_data.get("type") not in (14, 82, 83) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (14, 82, 83) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -1079,7 +1152,8 @@ with open(HEADHUNTING_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -1090,9 +1164,9 @@ with open(HEADHUNTING_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Headhunting|headhunting]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -1103,11 +1177,14 @@ with open(HEADHUNTING_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
 
 # Miscellaneous
 with open(MISCELLANEOUS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if (item_data.get("type") not in (8, 37, 38, 50, 51, 55, 65, 69, 80, 84, 85, 87, 89, 91) or (item_data.get("type") == 8 and item_data.get("sortId1") != -61) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin"))):
+        if (item_id in item_list.ITEM_LIST or item_data.get("type") not in (8, 37, 38, 50, 51, 55, 65, 69, 80, 84, 85, 87, 89, 91) or (item_data.get("type") == 8 and item_data.get("sortId1") != -61) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin"))):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -1118,7 +1195,8 @@ with open(MISCELLANEOUS_OUTPUT, "w", encoding="utf-8") as out:
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
-|filename = {info.item_id_output}{info.image}
+|filename = {info.item_id_output}
+|images = {info.image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -1129,9 +1207,9 @@ with open(MISCELLANEOUS_OUTPUT, "w", encoding="utf-8") as out:
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is a [[Miscellaneous|miscellaneous]] [[item]] in ''[[Arknights: Endfield]]''.
 
-{{{{Item description|{info.deco}}}}}
+{{{{Item description|{info.desc}|{info.deco}}}}}
 ==Usage==
-{info.desc}
+
 ==Acquisition==
 {info.source}
 
@@ -1142,3 +1220,9 @@ with open(MISCELLANEOUS_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
+
+# Add new items to exclusion list
+item.save_new_items_to_list(newly_processed_items)

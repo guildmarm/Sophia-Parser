@@ -37,9 +37,6 @@ for enemy_id, display_data in enemy_display.items():
 
 duplicate_name_map = {k: v for k, v in duplicate_name_map.items() if len(v) > 1}
 
-# Stuff for enemy nav
-enemy_aggeloi, enemy_landbreakers, enemy_pirates, enemy_wildlife = enemy.build_enemy_nav_lists(enemy_attr, enemy_display, enemy_group, wiki_group, enemy_type, language, enemy_name_counts, duplicate_name_map)
-
 # Make that sausage
 with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
     for enemy_id, attr_data in enemy_attr.items():
@@ -88,7 +85,7 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         enemy_hp, enemy_atk, enemy_def = enemy.resolve_enemy_level_stats(attr_data)
 
         # Level independent stats
-        enemy_weight, enemy_attack_range, enemy_stagger_hp, enemy_stagger_time, enemy_stagger_damage, physical_resist, nature_resist, cryo_resist, electric_resist, heat_resist, aether_resist = enemy.resolve_enemy_independent_stats(attr_data)
+        enemy_weight, enemy_attack_range, enemy_stagger_hp, enemy_stagger_time, enemy_stagger_damage, physical_resist, nature_resist, cryo_resist, electric_resist, heat_resist, aether_resist, enemy_sp_gain = enemy.resolve_enemy_independent_stats(attr_data)
 
         # Output
         out.write(f"""{{{{-start-}}}}
@@ -120,6 +117,7 @@ The '''{enemy_name}''' is a [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]
 |SHP = {enemy_stagger_hp}
 |SR = {enemy_stagger_time}
 |SD = {enemy_stagger_damage}
+|SPG = {enemy_sp_gain}
 |AR = {enemy_attack_range}
 |Weight = {enemy_weight}
 |wphysical = {physical_resist}
@@ -136,37 +134,6 @@ The '''{enemy_name}''' is a [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]
 ==Navigation==
 {{{{Enemies}}}}
 [[Category:{enemy_class} enemies]]
-
-{{{{-stop-}}}}
-
-""")
-
-# Make that sausage again (This is for the Enemy Nav template)
-with open(ENEMY_NAV_TEMPLATE_OUTPUT, "w", encoding="utf-8") as out:
-        out.write(f"""{{{{-start-}}}}
-'''Template:Enemies'''
-<onlyinclude>{{{{Navbox
-| Title = Enemies
-| State = {{{{{{state|expanded}}}}}}
-| Group style = text-align:center;
-
-| Group 1 = Aggeloi
-| List 1 = {enemy_aggeloi}
-
-| Group 2 = Landbreakers
-| List 2 = {enemy_landbreakers}
-
-| Group 3 = Cangzei Pirates
-| List 3 = {enemy_pirates}
-
-| Group 4 = Wildlife
-| List 4 = {enemy_wildlife}
-
-}}}}</onlyinclude><noinclude>This navbox template is used as a means to navigate a list of [[enemy|enemies]].
-
-To use this template, add <code><nowiki>{{{{Enemies}}}}</nowiki></code> at the end of an article.
-
-[[Category:Navboxes]]</noinclude>
 
 {{{{-stop-}}}}
 

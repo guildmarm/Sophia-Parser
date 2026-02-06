@@ -55,7 +55,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_name_clean = general.sanitize_name(operator_name)
 
         # mw.cleric input
-        wiki_params = {p: "" for p in ['realname', 'fileno', 'theme', 'illustrator', 'age', 'experience', 'birthplace', 'height']}
+        wiki_params = {p: "" for p in ['realname', 'fileno', 'theme', 'illustrator', 'jpcv', 'cncv', 'encv', 'krcv', 'matskill', 'matstats']}
         wiki_profile = ""
         wiki_changelog = ""
 
@@ -90,11 +90,11 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         sp_name = general.resolve_text(language["sp"], name_id)
         ru_name = general.resolve_text(language["ru"], name_id)
 
-        # CV names
-        cn_cv = operator.resolve_cv_name(operator_data, language, "ChiCVName")
-        jp_cv = operator.resolve_cv_name(operator_data, language, "JapCVName")
-        en_cv = operator.resolve_cv_name(operator_data, language, "EngCVName")
-        kr_cv = operator.resolve_cv_name(operator_data, language, "KorCVName")
+        # CV names (OLD)
+        #cn_cv = operator.resolve_cv_name(operator_data, char_table, operator_name, language, "ChiCVName")
+        #jp_cv = operator.resolve_cv_name(operator_data, char_table, operator_name, language, "JapCVName")
+        #en_cv = operator.resolve_cv_name(operator_data, char_table, operator_name, language, "EngCVName")
+        #kr_cv = operator.resolve_cv_name(operator_data, char_table, operator_name, language, "KorCVName")
 
         # Operator info
         rarity = operator_data.get("rarity", "")
@@ -136,6 +136,12 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_base_skills = operator.operator_base_skills(operator_id, char_growth, base_skill, language)
         base_skill_costs = operator.operator_base_talent_costs(operator_id, char_growth, item_table, base_skill, language)
 
+        # Operator file
+        operator_file = operator.get_operator_archives(operator_data, language)
+
+        # Operator dialogue
+        operator_dialogue = operator.get_operator_dialogue(operator_data, language)
+
         # Output
         out.write(f"""{{{{-start-}}}}
 '''{operator_name_clean}'''
@@ -165,17 +171,13 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |fileno = {wiki_params['fileno']}
 |theme = {wiki_params['theme']}
 |illustrator = {wiki_params['illustrator']}
-|jpcv = {jp_cv}
-|cncv = {cn_cv}
-|encv = {en_cv}
-|krcv = {kr_cv}
+|jpcv = {wiki_params['jpcv']}
+|cncv = {wiki_params['cncv']}
+|encv = {wiki_params['encv']}
+|krcv = {wiki_params['krcv']}
 |gender = {gender}
-|age = {wiki_params['age']}
-|experience = {wiki_params['experience']}
-|birthplace = {wiki_params['birthplace']}
 |birthdate = {birthdate}
 |race = {race}
-|height = {wiki_params['height']}
 |infection = {infection}
 |strength = {strength}
 |tactical = {tactical}
@@ -190,6 +192,8 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |hb2 = {hobbyname2}
 |hb2d = {hobbydesc2}
 |prefer = {prefer}
+|matskill = {wiki_params['matskill']}
+|matstats = {wiki_params['matstats']}
 }}}}
 
 ==Profile==
@@ -223,6 +227,22 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
 ==Navigation==
 {{{{Operators}}}}
+
+{{{{-stop-}}}}
+
+{{{{-start-}}}}
+'''{operator_name_clean}/File'''
+{{{{Operator tab}}}}
+{operator_file}
+
+{{{{-stop-}}}}
+
+{{{{-start-}}}}
+'''{operator_name_clean}/Dialogue'''
+{{{{Operator tab}}}}
+{{{{Operator dialogue head}}}}
+{operator_dialogue}
+{{{{Table end}}}}
 
 {{{{-stop-}}}}
 

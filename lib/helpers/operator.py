@@ -1,5 +1,5 @@
 from lib.io import load_json
-from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS
+from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS, DIALOGUE_TYPE
 from lib.format_text import module_format, efdb_format
 import lib.general as general
 from collections import OrderedDict, defaultdict
@@ -114,7 +114,7 @@ def resolve_operator_faction(operator_id, char_tags, tag_data, language, lang="e
     return general.resolve_text(language[lang], tag_name_id)
 
 def get_starting_operator(operator_id):
-    starting_operators = ("chr_0002_endminm", "chr_0003_endminf", "chr_9000_endmin", "chr_0004_pelica", "chr_0005_chen")
+    starting_operators = ("chr_0002_endminm", "chr_0003_endminf", "chr_9000_endmin", "chr_0004_pelica", "chr_0005_chen", "chr_0006_wolfgd")
     if operator_id in starting_operators:
         return "true"
     return ""
@@ -1121,7 +1121,24 @@ def operator_base_talent_costs(operator_id, char_growth, item_table, base_skill,
 |bscost2 = {finalize_row(bscost2_slots)}
 }}}}"""
 
-def resolve_cv_name(operator_data, language, cv_key, lang="en"):
+def resolve_cv_name(operator_data, char_table, operator_name, language, cv_key, lang="en"):
+    if operator_name == "Endministrator":
+        mirror_data = char_table.get("chr_0003_endminf", {})
+        
+        try:
+            m_cv_id = operator_data["cvName"][cv_key]["id"]
+            f_cv_id = mirror_data.get("cvName", {}).get(cv_key, {}).get("id", "0")
+            
+            m_cv = general.resolve_text(language[lang], m_cv_id) if m_cv_id != "0" else ""
+            f_cv = general.resolve_text(language[lang], f_cv_id) if f_cv_id != "0" else ""
+            
+            if f_cv and m_cv:
+                if f_cv == m_cv: return f_cv
+                return f"\n*{f_cv} (Female) \n*{m_cv} (Male)"
+            return f_cv or m_cv or ""
+        except KeyError:
+            pass
+
     try:
         cv_id = operator_data["cvName"][cv_key]["id"]
         if cv_id != "0":
@@ -1129,3 +1146,59 @@ def resolve_cv_name(operator_data, language, cv_key, lang="en"):
     except KeyError:
         pass
     return ""
+
+def get_operator_archives(operator_data, language, lang="en"):
+    records = operator_data.get("profileRecord", [])
+    if not records:
+        return ""
+
+    archive_blocks = []
+
+    for record in records:
+        title_id = record.get("recordTitle", {}).get("id")
+        title = general.resolve_text(language[lang], title_id) if title_id else ""
+        desc_id = record.get("recordDesc", {}).get("id")
+        raw_desc = general.resolve_text(language[lang], desc_id) if desc_id else ""
+        
+        if raw_desc:
+            raw_desc = raw_desc.replace("<@profile.key>", "").replace("</>", "")
+            formatted_desc = raw_desc.replace("\n", "<br/>")
+        else:
+            formatted_desc = ""
+
+        block = f"{{{{Archive\n|title = {title}\n|text = {formatted_desc}\n}}}}"
+        archive_blocks.append(block)
+
+    return "\n\n".join(archive_blocks)
+
+def get_operator_dialogue(operator_data, language, lang="en"):
+    voice_records = operator_data.get("profileVoice", [])
+    if not voice_records:
+        return ""
+
+    dialogue_entries = []
+
+    for entry in voice_records:
+        title_id = entry.get("voiceTitle", {}).get("id")
+        title = general.resolve_text(language[lang], title_id).strip() if title_id else ""
+
+        desc_id = entry.get("voiceDesc", {}).get("id")
+        dialogue = general.resolve_text(language[lang], desc_id).replace("\n", " ").strip() if desc_id else ""
+
+        if title.startswith("Topic:"):
+            topic_name = title.split(":", 1)[1].strip()
+            number = 37
+            line = f"{{{{Operator dialogue cell|no={number}|topic={topic_name}|dialogue={dialogue}}}}}"
+            dialogue_entries.append((number, line))
+            continue
+
+        number = DIALOGUE_TYPE.get(title)
+        if number is None:
+            continue
+
+        line = f"{{{{Operator dialogue cell|no={number}|dialogue={dialogue}}}}}"
+        dialogue_entries.append((number, line))
+
+    dialogue_entries.sort(key=lambda x: x[0])
+    
+    return "\n".join([entry[1] for entry in dialogue_entries])

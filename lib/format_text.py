@@ -7,6 +7,7 @@ BA_KEY = re.compile(r"<@ba\.key>(.*?)</>")
 BA_HEAL = re.compile(r"<@ba\.heal>(.*?)</>")
 BA_INFO = re.compile(r"<@ba\.info>(.*?)</>")
 BA_PD = re.compile(r"<@ba\.pd>(.*?)</>") # Physical Damage
+BA_PHY = re.compile(r"<@ba\.phy>(.*?)</>") # Physical Damage
 BA_CRYST = re.compile(r"<@ba\.cryst>(.*?)</>") # Cryo Damage
 BA_PULSE = re.compile(r"<@ba\.pulse>(.*?)</>") # Electric Damage
 BA_FIRE = re.compile(r"<@ba\.fire>(.*?)</>") # Heat Damage
@@ -75,6 +76,10 @@ def efdb_format(text: str) -> str:
     if not text:
         return text
 
+    # Remove hyphen from consumables tip text
+    text = text.replace(" - <@tips.orange>", "* <@tips.orange>")
+    text = text.replace(" - <@tips.purple>", "* <@tips.purple>")
+
     # Text that uses the {{Color}} template
     text = BA_VUP.sub(r"{{Color|\1|1d}}", text)
     text = BA_POISE.sub(r"{{Color|\1|2}}", text)
@@ -82,6 +87,7 @@ def efdb_format(text: str) -> str:
     text = BA_HEAL.sub(r"{{Color|\1|1c}}", text)
     text = BA_INFO.sub(r"{{Color|\1|9}}", text)
     text = BA_PD.sub(r"{{Color|\1|1}}", text) # Physical Damage
+    text = BA_PHY.sub(r"{{Color|\1|1}}", text) # Physical Damage
     text = BA_CRYST.sub(r"{{Color|\1|4}}", text) # Cryo Damage
     text = BA_PULSE.sub(r"{{Color|\1|6}}", text) # Electric Damage
     text = BA_FIRE.sub(r"{{Color|\1|3}}", text) # Heat Damage
@@ -152,13 +158,18 @@ def module_format(text: str) -> str:
     if not text:
         return text
 
-    # Text that uses <span> colors
+    # Remove hyphen from consumables tip text
+    text = text.replace(" - <@tips.orange>", "* <@tips.orange>")
+    text = text.replace(" - <@tips.purple>", "* <@tips.purple>")
+
+    # Text that uses the <span> template
     text = BA_VUP.sub(r"<blue>\1</span>", text)
     text = BA_POISE.sub(r"<stagger>\1</span>", text)
     text = BA_KEY.sub(r"<key>\1</span>", text)
     text = BA_HEAL.sub(r"<green>\1</span>", text)
     text = BA_INFO.sub(r"<grey>\1</span>", text)
     #text = BA_PD.sub(r"{{Color|\1|1}}", text) # Physical Damage
+    #text = BA_PHY.sub(r"{{Color|\1|1}}", text) # Physical Damage
     #text = BA_CRYST.sub(r"{{Color|\1|4}}", text) # Cryo Damage
     #text = BA_PULSE.sub(r"{{Color|\1|6}}", text) # Electric Damage
     #text = BA_FIRE.sub(r"{{Color|\1|3}}", text) # Heat Damage

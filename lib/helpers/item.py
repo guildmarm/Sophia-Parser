@@ -1,11 +1,13 @@
 from lib.io import load_json
-from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS
+from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS, BASE_DIR
 from lib.format_text import module_format, efdb_format
 import lib.general as general
 from collections import OrderedDict, defaultdict
+from datetime import datetime
 import math
 import html
 import re
+import os
 
 def resolve_item_sources(item_id, item_table, system_jump_table, language, lang="en"):
     item_data = item_table.get(item_id)
@@ -216,3 +218,23 @@ def get_item_tactical_effect(item_id, equip_item, language, lang="en"):
         raw_text = raw_text.replace(full_match, formatted_value)
 
     return efdb_format(raw_text)
+
+def save_new_items_to_list(new_ids):
+    if not new_ids:
+        return
+
+    file_path = os.path.join(BASE_DIR, "lib", "item_list.py")
+    today = datetime.now().strftime("%Y-%m-%d")
+    
+    with open(file_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    for i in range(len(lines) - 1, -1, -1):
+        if "]" in lines[i]:
+            lines.insert(i, f'    # Added {today}\n')
+            for idx, item_id in enumerate(new_ids):
+                lines.insert(i + 1 + idx, f'    "{item_id}",\n')
+            break
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.writelines(lines)
