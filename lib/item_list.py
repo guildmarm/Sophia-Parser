@@ -1893,4 +1893,8 @@ ITEM_LIST = [
     "wpn_sword_0021",
     # Added 2026-02-05
     "item_case_char_selfselect_standard",
+    # Added 2026-02-11
+    "item_ap_supply_springfes_1",
+    "item_ap_supply_springfes_2",
+    "item_ap_supply_springfes_3",
 ]
