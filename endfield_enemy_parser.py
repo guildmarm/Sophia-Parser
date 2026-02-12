@@ -34,9 +34,13 @@ language = io.load_languages(const.INPUT_DIR)
 
 # mw.cleric helpers
 def get_wiki_section(text, header):
-    pattern = rf"==\s*{header}\s*==\s*(.*?)(?=\n==|$)"
-    match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
-    return match.group(1).strip() if match else ""
+    parsed = mwparserfromhell.parse(text)
+    for section in parsed.get_sections(levels=[2]):
+        headings = section.filter_headings()
+        if headings and headings[0].title.strip().lower() == header.lower():
+            heading_len = len(str(headings[0]))
+            return str(section)[heading_len:].strip()
+    return ""
 
 enemy_name_counts = {}
 duplicate_name_map = {}
@@ -63,15 +67,6 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         enemy_name_clean = general.sanitize_name(enemy_name)
         enemy_name_image = general.sanitize_image_name(enemy_name)
 
-        # mw.cleric input
-        wiki_changelog = ""
-
-        page = site.client.pages[enemy_name]
-        if page.exists:
-            wikitext = page.text()
-            parsed_code = mwparserfromhell.parse(wikitext)
-            wiki_changelog = get_wiki_section(wikitext, "Changelog")
-
         # Append the ID if there are duplicates but just the last part of it
         enemy_name, enemy_name_clean, enemy_name_image, enemy_alternate_text = enemy.resolve_enemy_names(enemy_id, enemy_name, enemy_name_clean, enemy_name_image, enemy_name_counts, duplicate_name_map)
         cn_name = general.resolve_text(language["cn"], name_id)
@@ -80,6 +75,14 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         kr_name = general.resolve_text(language["kr"], name_id)
         sp_name = general.resolve_text(language["sp"], name_id)
         ru_name = general.resolve_text(language["ru"], name_id)
+
+        # mw.cleric input
+        wiki_changelog = ""
+
+        page = site.client.pages[enemy_name_clean]
+        if page.exists:
+            wikitext = page.text()
+            wiki_changelog = get_wiki_section(wikitext, "Changelog")
 
         # Enemy description
         desc_id = display_data.get("description", {}).get("id")
@@ -164,4 +167,4 @@ The '''{enemy_name}''' is a [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]
 
 """)
         # Short sleep between parses so there's no error with timeouts on the wiki API
-        time.sleep(3)
+        time.sleep(2)
