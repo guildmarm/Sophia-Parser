@@ -44,6 +44,20 @@ def get_wiki_section(text, header):
     match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
     return match.group(1).strip() if match else ""
 
+def get_lead_text(parsed_code, template_name):
+    found_template = False
+    intro_nodes = []
+    for node in parsed_code.nodes:
+        if isinstance(node, mwparserfromhell.nodes.template.Template):
+            if node.name.matches(template_name):
+                found_template = True
+                continue
+        if found_template:
+            if isinstance(node, mwparserfromhell.nodes.heading.Heading):
+                break
+            intro_nodes.append(str(node))
+    return "".join(intro_nodes).strip()
+
 # Make that sausage
 with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
     for operator_id, operator_data in char_table.items():
@@ -56,7 +70,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_name_clean = general.sanitize_name(operator_name)
 
         # mw.cleric input
-        wiki_params = {p: "" for p in ['realname', 'fileno', 'theme', 'illustrator', 'jpcv', 'cncv', 'encv', 'krcv', 'matskill', 'matstats']}
+        wiki_params = {p: "" for p in ['fullname', 'fileno', 'theme', 'illustrator', 'jpcv', 'cncv', 'encv', 'krcv', 'matskill', 'matstats']}
         wiki_profile = ""
         wiki_changelog = ""
 
@@ -64,6 +78,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         if page.exists:
             wikitext = page.text()
             parsed_code = mwparserfromhell.parse(wikitext)
+            wiki_intro = get_lead_text(parsed_code, "Operator infobox")
             for template in parsed_code.filter_templates():
                 if template.name.matches("Operator infobox"):
                     for p in wiki_params.keys():
@@ -168,7 +183,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |krname = {kr_name}
 |spname = {sp_name}
 |runame = {ru_name}
-|realname = {wiki_params['realname']}
+|fullname = {wiki_params['fullname']}
 |fileno = {wiki_params['fileno']}
 |theme = {wiki_params['theme']}
 |illustrator = {wiki_params['illustrator']}
@@ -196,6 +211,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |matskill = {wiki_params['matskill']}
 |matstats = {wiki_params['matstats']}
 }}}}
+{wiki_intro}
 
 ==Profile==
 {wiki_profile}
