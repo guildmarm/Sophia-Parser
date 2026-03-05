@@ -82,6 +82,7 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         page = site.client.pages[enemy_name_clean]
         if page.exists:
             wikitext = page.text()
+            wiki_overview = get_wiki_section(wikitext, "Overview")
             wiki_changelog = get_wiki_section(wikitext, "Changelog")
 
         # Enemy description
@@ -130,11 +131,11 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |attack = 
 |damage = 
 |upgrade = }}}}
-The '''{enemy_name}''' is a [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]''.{enemy_alternate_text}
+'''{enemy_name}''' is a [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]''.{enemy_alternate_text}
 
 {{{{Enemy description|{enemy_desc}}}}}
 
-==Overview==
+==Stats==
 {{{{Enemy data
 |HP = {enemy_hp}
 |ATK = {enemy_atk}
@@ -155,6 +156,9 @@ The '''{enemy_name}''' is a [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]
 |location = {enemy_location}
 |drops = {enemy_drop_item}
 |addendum = }}}}
+
+==Overview==
+{wiki_overview}
 
 ==Changelog==
 {wiki_changelog}
