@@ -60,7 +60,7 @@ def resolve_gear_attributes_sections(equip_data, attribute_filter, language, lan
                     entry.get("attributeType") == 0
                     and entry.get("compositeAttr") == composite_attr
                 ):
-                    name_id = entry.get("name", {}).get("id")
+                    name_id = str(entry.get("name", {}).get("id"))
                     stat_name = general.resolve_text(language[lang], name_id)
                     break
         else:
@@ -132,7 +132,7 @@ def resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language, lang
         if gear_id not in equip_list:
             continue
 
-        suit_name_id = suit_data.get("list", [{}])[0].get("suitName", {}).get("id")
+        suit_name_id = str(suit_data.get("list", [{}])[0].get("suitName", {}).get("id"))
         gear_set = language[lang].get(suit_name_id, "")
         skill_id = suit_data.get("list", [{}])[0].get("skillID", "")
         skill_entry = skill_patch.get(skill_id, {})
@@ -140,7 +140,7 @@ def resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language, lang
         if not bundle:
             break
 
-        desc_id = bundle[0].get("description", {}).get("id")
+        desc_id = str(bundle[0].get("description", {}).get("id"))
         desc_text = language[lang].get(desc_id, "")
         blackboard = {bb["key"]: bb["value"] for bb in bundle[0].get("blackboard", []) if "key" in bb}
 
@@ -174,12 +174,20 @@ def resolve_gear_recipe(gear_id, equip_formula, item_table, language, lang="en")
 
     for formula in equip_formula.values():
         if formula.get("outcomeEquipId") == gear_id:
+            gold_id = formula.get("costGoldId")
+            gold_num = formula.get("costGoldNum", 0)
+            if gold_id and gold_num > 0:
+                gold_item = item_table.get(gold_id, {})
+                gold_name = language[lang].get(str(gold_item.get("name", {}).get("id")), "")
+                if gold_name:
+                    recipe_parts.append(f"{{{{I|{gold_name}|{gold_num}}}}}")
+
             cost_ids = formula.get("costItemId", [])
             cost_nums = formula.get("costItemNum", [])
 
             for item_id, count in zip(cost_ids, cost_nums):
                 item_entry = item_table.get(item_id, {})
-                name_id = item_entry.get("name", {}).get("id")
+                name_id = str(item_entry.get("name", {}).get("id"))
                 item_name = language[lang].get(name_id, "")
                 if item_name:
                     recipe_parts.append(f"{{{{I|{item_name}|{count}}}}}")
@@ -207,7 +215,7 @@ def resolve_gear_sources_from_formula(gear_id, equip_formula, item_table, system
             entry = system_jump_table.get(oid)
             if not entry:
                 continue
-            desc_id = entry.get("desc", {}).get("id")
+            desc_id = str(entry.get("desc", {}).get("id"))
             localized_desc = general.resolve_text(language[lang], desc_id)
             if localized_desc:
                 sources.append(localized_desc)
@@ -234,7 +242,7 @@ def build_gear_set_lines(equip_table, item_table, equip_suit, language, lang="en
         if not gear_set:
             continue
 
-        gear_name = general.sanitize_name(general.resolve_text(language[lang], item_data.get("name", {}).get("id")))
+        gear_name = general.sanitize_name(general.resolve_text(language[lang], str(item_data.get("name", {}).get("id"))))
         rarity = item_data.get("rarity", 0)
         gear_type = get_gear_part_type(gear_data)
 
@@ -268,7 +276,7 @@ def build_gear_nav_lists(equip_table, item_table, language, lang="en"):
         if not item_data:
             continue
 
-        name_id = item_data.get("name", {}).get("id")
+        name_id = str(item_data.get("name", {}).get("id"))
         gear_name = general.resolve_text(language[lang], name_id)
         rarity = item_data.get("rarity", 0)
 

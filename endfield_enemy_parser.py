@@ -77,12 +77,15 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         ru_name = general.resolve_text(language["ru"], name_id)
 
         # mw.cleric input
+        wiki_overview = ""
+        wiki_addition = ""
         wiki_changelog = ""
 
         page = site.client.pages[enemy_name_clean]
         if page.exists:
             wikitext = page.text()
             wiki_overview = get_wiki_section(wikitext, "Overview")
+            wiki_addition = get_wiki_section(wikitext, "See Also")
             wiki_changelog = get_wiki_section(wikitext, "Changelog")
 
         # Enemy description
@@ -159,6 +162,9 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
 ==Overview==
 {wiki_overview}
+
+==See Also==
+{wiki_addition}
 
 ==Changelog==
 {wiki_changelog}

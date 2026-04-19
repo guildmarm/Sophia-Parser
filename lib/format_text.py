@@ -71,6 +71,8 @@ BA_SLOW = re.compile(r"<#ba\.slow>(.*?)</>")
 BA_WEAK = re.compile(r"<#ba\.weak>(.*?)</>")
 BA_ORIGINIUM = re.compile(r"<#ba\.originium>(.*?)</>")
 BA_CRYSTBREAK = re.compile(r"<#ba\.crystbreak>(.*?)</>")
+BA_SPEEDUP = re.compile(r"<#ba\.speedup>(.*?)</>")
+BA_ROSSI = re.compile(r"<#ba\.rossi>(.*?)</>")
 
 def efdb_format(text: str) -> str:
     if not text:
@@ -151,6 +153,8 @@ def efdb_format(text: str) -> str:
     text = BA_WEAK.sub(r"{{G|Weaken|\1}}", text)
     text = BA_ORIGINIUM.sub(r"{{G|Originium Crystal|\1}}", text)
     text = BA_CRYSTBREAK.sub(r"{{G|Shatter|\1}}", text)
+    text = BA_SPEEDUP.sub(r"{{G|Haste|\1}}", text)
+    text = BA_ROSSI.sub(r"{{G|Razor Clawmark|\1}}", text)
 
     return text
 
@@ -233,5 +237,7 @@ def module_format(text: str) -> str:
     text = BA_WEAK.sub(r"{{G|Weaken|\1}}", text)
     text = BA_ORIGINIUM.sub(r"{{G|Originium Crystal|\1}}", text)
     text = BA_CRYSTBREAK.sub(r"{{G|Shatter|\1}}", text)
+    text = BA_SPEEDUP.sub(r"{{G|Haste|\1}}", text)
+    text = BA_ROSSI.sub(r"{{G|Razor Clawmark|\1}}", text)
 
     return text

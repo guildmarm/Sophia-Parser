@@ -69,9 +69,16 @@ class GeneralItemInfo:
         if name_counts.get(self.name, 0) > 1:
             suffix_map = {
                 "water": " (Clean Water)",
+                "sewage": " (Sewage)",
                 "grass_1": " (Jincao Solution)",
                 "grass_2": " (Yazhen Solution)",
-                "xiranite": " (Liquid Xiranite)"
+                "xiranite": " (Liquid Xiranite)",
+                "xiranite_poly": " (Xircon Effluent)",
+                "xiranite_lowpoly": " (Inert Xircon Effluent)",
+                "acid": " (Precipitation Acid)",
+                "xiranite_enr": " (Liquid Heavy Xiranite)",
+                "copper": " (Cuprium Solution)",
+                "copper_enr": " (Hetonite Solution)",
             }
             
             for key, val in suffix_map.items():

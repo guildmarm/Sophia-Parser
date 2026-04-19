@@ -136,7 +136,7 @@ with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 {{{{Weapons}}}}
 
 [[Category:Weapons]]
-[[Category:{weapon_type}]]
+[[Category:{weapon_type}s]]
 
 {{{{-stop-}}}}
 
