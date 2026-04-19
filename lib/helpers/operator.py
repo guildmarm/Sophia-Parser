@@ -141,6 +141,7 @@ def get_operator_profile_records(operator_data, language, lang="en"):
     gender_value = ""
     birthdate_value = ""
     race_value = ""
+    auth_value = ""
     infection_value = ""
     strength_value = ""
     skill_value = ""
@@ -161,6 +162,9 @@ def get_operator_profile_records(operator_data, language, lang="en"):
             match_race = re.search(r"RACE:\s*(.+)", text)
             if match_race:
                 race_value = f"{match_race.group(1).strip()}"
+            match_auth = re.search(r"AUTHENTICATION:\s*(.+)", text)
+            if match_auth:
+                auth_value = f"{match_auth.group(1).strip()}"
             match_infection = re.search(r"\[ORIPATHY INFECTION STATUS\]\s*\n(.+)", text)
             if match_infection:
                 infection_value = match_infection.group(1).strip()
@@ -177,7 +181,7 @@ def get_operator_profile_records(operator_data, language, lang="en"):
             if match_originium:
                 originium_value = match_originium.group(1).strip().replace("</>", "")
 
-    return "\n".join(output), gender_value, birthdate_value, race_value, infection_value, strength_value, skill_value, tactical_value, originium_value
+    return "\n".join(output), gender_value, birthdate_value, race_value, auth_value, infection_value, strength_value, skill_value, tactical_value, originium_value
 
 def get_operator_hobbies_and_expertise(operator_id, char_tags, tag_data, char_tag_des, language, lang="en"):
     hobbyname1 = ""
@@ -324,7 +328,12 @@ def get_operator_potentials(operator_id, char_potential, potential_effect, langu
                             if placeholder.endswith(("%", ":0%")):
                                 evaluated_str = f"{round(evaluated * 100, 2)}%".replace(".0%", "%")
                             else:
-                                evaluated_str = f"{round(evaluated, 2)}".replace(".0", "")
+                                prec_match = re.search(r":0\.(\d+)", placeholder)
+                                if prec_match:
+                                    precision = len(prec_match.group(1))
+                                    evaluated_str = f"{evaluated:.{precision}f}"
+                                else:
+                                    evaluated_str = f"{round(evaluated, 2):g}"
                             
                             raw_desc = raw_desc.replace(f"{{{placeholder}}}", evaluated_str)
 
@@ -424,7 +433,7 @@ def get_operator_upgrade_items(operator_id, char_growth, item_table, language, l
 |e3 = {results['e3']}
 |e4 = {results['e4']}"""
 
-def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, weapon, lang="en"):
+def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, weapon, wiki_skills={}, lang="en"):
     text_table = language[lang]
     cdata = char_growth.get(operator_id)
     if not cdata or not isinstance(cdata, dict):
@@ -562,6 +571,7 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
 |name= {name_text}
 |icon= {icon_prefix}-{icon_suffix}
 |type= {{{{SB|{type_num}}}}}
+|info= {wiki_skills.get(name_text, "")}
 |desc= {desc_text}
 {stat_block}
 }}}}""")
@@ -818,10 +828,15 @@ def operator_passive_talents(operator_id, operator_name, char_growth, potential_
                                     evaluated = float_value
                                 
                                 if placeholder.endswith(("%", ":0%")):
-                                    evaluated_str = f"{round(evaluated * 100, 2)}%".replace(".0%", "%")
+                                    evaluated_str = f"{round(evaluated * 100, 2):g}%"
                                 else:
-                                    evaluated_str = f"{round(evaluated, 2)}".replace(".0", "")
-                                
+                                    prec_match = re.search(r":0\.(\d+)", placeholder)
+                                    if prec_match:
+                                        precision = len(prec_match.group(1))
+                                        evaluated_str = f"{evaluated:.{precision}f}"
+                                    else:
+                                        evaluated_str = f"{round(evaluated, 2):g}"
+
                                 raw_desc = raw_desc.replace(f"{{{placeholder}}}", evaluated_str)
 
                     attr_type = data.get("attrModifier", {}).get("attrType")

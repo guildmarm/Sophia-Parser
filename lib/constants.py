@@ -343,7 +343,7 @@ DIALOGUE_TYPE = {
     "Rest": 47,
     "Tactical Use 1": 48,
     "Tactical Use 2": 49,
-    "Warning Teammate": 50,
+    "Danger Warning": 50,
     "Injured": 51,
     "0 HP": 52,
     "Team Encouragement 1": 53,

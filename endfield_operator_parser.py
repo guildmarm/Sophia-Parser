@@ -71,6 +71,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
         # mw.cleric input
         wiki_params = {p: "" for p in ['fullname', 'fileno', 'theme', 'illustrator', 'jpcv', 'cncv', 'encv', 'krcv', 'matskill', 'matstats']}
+        wiki_skills = {}
         wiki_profile = ""
         wiki_changelog = ""
 
@@ -84,7 +85,10 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
                     for p in wiki_params.keys():
                         if template.has(p):
                             wiki_params[p] = str(template.get(p).value).strip()
-                    break
+                if template.name.matches("Combat skill") and template.has("name"):
+                    s_name = str(template.get("name").value).strip()
+                    s_info = str(template.get("info").value).strip() if template.has("info") else ""
+                    wiki_skills[s_name] = s_info
             
             wiki_profile = get_wiki_section(wikitext, "Profile")
             wiki_changelog = get_wiki_section(wikitext, "Changelog")
@@ -133,7 +137,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_stats = operator.build_operator_stats_block(extracted_stats)
 
         # Operator infobox
-        full_text, gender, birthdate, race, infection, strength, skill, tactical, originium = operator.get_operator_profile_records(operator_data, language)
+        full_text, gender, birthdate, race, authentication, infection, strength, skill, tactical, originium = operator.get_operator_profile_records(operator_data, language)
         hobbyname1, hobbyname2, expertname1, expertname2, hobbydesc1, hobbydesc2, expertdesc1, expertdesc2, prefer = operator.get_operator_hobbies_and_expertise(operator_id, char_tags, tag_data, char_tag_des, language)
 
         # Operator potentials and rank up items
@@ -141,7 +145,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_upgrade_items = operator.get_operator_upgrade_items(operator_id, char_growth, item_table, language)
 
         # Operator skills
-        operator_combat_skills = operator.get_operator_combat_skills(operator_id, char_growth, skill_patch, language, weapon)
+        operator_combat_skills = operator.get_operator_combat_skills(operator_id, char_growth, skill_patch, language, weapon, wiki_skills)
         operator_skill_items = operator.get_operator_skill_items(operator_id, char_growth, item_table, language)
 
         # Operator Talents and Base Skills
@@ -192,6 +196,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |encv = {wiki_params['encv']}
 |krcv = {wiki_params['krcv']}
 |gender = {gender}
+|authentication = {authentication}
 |birthdate = {birthdate}
 |race = {race}
 |infection = {infection}

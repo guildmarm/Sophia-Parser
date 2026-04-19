@@ -10,6 +10,7 @@ import os
 GEAR_PAGE_OUTPUT = os.path.join(const.OUTPUT_DIR, "full_gear_page_data.txt")
 GEAR_SET_TEMPLATE_OUTPUT = os.path.join(const.OUTPUT_DIR, "template_gear_set_data.txt")
 GEAR_NAV_TEMPLATE_OUTPUT = os.path.join(const.OUTPUT_DIR, "template_gear_nav_data.txt")
+GEAR_IMAGE_ICON_OUTPUT = os.path.join(const.OUTPUT_DIR, "gear_image_icon_data.txt")
 os.makedirs(const.OUTPUT_DIR, exist_ok=True)
 
 paths = game_files.build_paths(const.INPUT_DIR)
@@ -68,7 +69,7 @@ with open(GEAR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         # Gear set and effect
         gear_set, set_effect = gear.resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language)
         set_effect_formatted = format_text.efdb_format(set_effect)
-        gear_setname = f"[[{gear_set}]]" if gear_set else ""
+        gear_setname = f"{gear_set}" if gear_set else ""
         gear_set_template = f"{{{{Gear Set|{gear_set}}}}}" if gear_set else ""
         gear_set_section = f"==Set Items==" if gear_set else ""
 
@@ -123,8 +124,27 @@ with open(GEAR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 {gear_set_section}
 {gear_set_template}
 {{{{Gears|state=collapsed}}}}
-[[Category:Gear]]
-[[Category:{gear_type}]]
+
+{{{{-stop-}}}}
+
+""")
+
+# Push icon redirects
+with open(GEAR_IMAGE_ICON_OUTPUT, "w", encoding="utf-8") as out:
+    for gear_id, gear_data in equip_table.items():
+        item_data = item_table.get(gear_id)
+        if not item_data:
+            continue
+
+        # Gear names
+        name_id = item_data.get("name", {}).get("id")
+        gear_name = general.resolve_text(language["en"], name_id)
+        gear_name_clean = general.sanitize_name(gear_name)
+        gear_name_image = general.sanitize_image_name(gear_name)
+        
+        out.write(f"""{{{{-start-}}}}
+'''File:{gear_name_clean}_icon.png'''
+#REDIRECT [[File:{gear_name_image}.png]]
 
 {{{{-stop-}}}}
 
