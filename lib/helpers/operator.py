@@ -292,26 +292,38 @@ def get_operator_potentials(operator_id, char_potential, potential_effect, langu
         if desc_id and desc_id != "0":
             raw_desc = general.resolve_text(language[lang], desc_id)
             for data in effect_entry.get("dataList", []):
-                for bb in data.get("attachBuff", {}).get("blackboard", []):
-                    key = bb.get("key")
-                    value = bb.get("value")
-                    if value is not None:
-                        if f"{{{key}:0%}}" in raw_desc:
-                            v_pct = value * 100
-                            raw_desc = raw_desc.replace(f"{{{key}:0%}}", f"{v_pct:g}%")
-                        decimal_pattern = rf"\{{{key}:0\.(\d+)\}}"
-                        for match in re.findall(decimal_pattern, raw_desc):
-                            precision = len(match)
-                            formatted_val = f"{value:.{precision}f}"
-                            raw_desc = raw_desc.replace(f"{{{key}:0.{match}}}", formatted_val)
-                        raw_desc = raw_desc.replace(f"{{{key}:0}}", str(value))
+                for source_path in ["attachBuff", "attachSkill"]:
+                    for bb in data.get(source_path, {}).get("blackboard", []):
+                        key = bb.get("key")
+                        value = bb.get("value")
+                        if key and value is not None:
+                            for placeholder in re.findall(r"\{([^}]+)\}", raw_desc):
+                                if re.search(rf"\b{re.escape(key)}\b", placeholder):
+                                    parts = placeholder.split(':')
+                                    math_part = parts[0]
+                                    expr = math_part.replace(key, str(value))
+                                    try:
+                                        evaluated = eval(expr)
+                                    except Exception:
+                                        evaluated = value
 
-                for bb in data.get("attachSkill", {}).get("blackboard", []):
-                    key = bb.get("key")
-                    value = bb.get("value")
-                    if value is not None:
-                        raw_desc = raw_desc.replace(f"{{{key}:0}}", str(value))
-                        raw_desc = raw_desc.replace(f"{{{key}:0%}}", str(value)).replace(".0", "")
+                                    if placeholder.endswith(("%", ":0%")):
+                                        v_pct = evaluated * 100
+                                        prec_match = re.search(r"0\.(\d+)%", placeholder)
+                                        if prec_match:
+                                            precision = len(prec_match.group(1))
+                                            res = f"{v_pct:.{precision}f}%"
+                                        else:
+                                            res = f"{v_pct:g}%"
+                                    else:
+                                        prec_match = re.search(r"0\.(\d+)", placeholder)
+                                        if prec_match:
+                                            precision = len(prec_match.group(1))
+                                            res = f"{evaluated:.{precision}f}"
+                                        else:
+                                            res = f"{evaluated:g}"
+
+                                    raw_desc = raw_desc.replace(f"{{{placeholder}}}", res)
 
                 bb_key = data.get("skillBbModifier", {}).get("bbKey")
                 float_value = data.get("skillBbModifier", {}).get("floatValue")
