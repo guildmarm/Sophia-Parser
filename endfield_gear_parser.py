@@ -100,7 +100,7 @@ with open(GEAR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |artifice = {gear_artifice}
 |type = {gear_type}
 |level = {gear_level}
-|region = [[{gear_region}]]
+|region = {gear_region}
 |source = {source_text}
 }}}}
 '''{gear_name}''' is a {{{{gear|{rarity}|{gear_type}}}}}gear item.
