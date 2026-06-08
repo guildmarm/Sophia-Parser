@@ -34,6 +34,8 @@ tag_data = io.load_json(paths["tag_data"])
 gacha_pool_content = io.load_json(paths["gacha_pool_content"])
 gacha_pool = io.load_json(paths["gacha_pool"])
 enums_table = io.load_json(paths["pot_effect_enums"])
+weapon_basic = io.load_json(paths["weapon_basic"])
+rec_weapon = io.load_json(paths["rec_weapon"])
 
 # Load language files
 language = io.load_languages(const.INPUT_DIR)
@@ -156,6 +158,9 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_base_skills = operator.operator_base_skills(operator_id, char_growth, base_skill, language)
         base_skill_costs = operator.operator_base_talent_costs(operator_id, char_growth, item_table, base_skill, language)
 
+        # Operator recommended weapons
+        operator_matskill, operator_matstats = operator.get_operator_recommended_weapons(operator_id, rec_weapon, weapon_basic, language)
+
         # Operator file
         operator_file = operator.get_operator_archives(operator_data, language)
 
@@ -213,8 +218,8 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |hb2 = {hobbyname2}
 |hb2d = {hobbydesc2}
 |prefer = {prefer}
-|matskill = {wiki_params['matskill']}
-|matstats = {wiki_params['matstats']}
+|matskill = {operator_matskill}
+|matstats = {operator_matstats}
 }}}}
 {wiki_intro}
 

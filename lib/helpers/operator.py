@@ -1014,6 +1014,7 @@ def operator_base_skills(operator_id, char_growth, base_skill, language, lang="e
     bslevels = ["1_1", "1_2", "2_1", "2_2"]
     conds = ["", "", "", ""]
     talent_names = ["", "", "", ""]
+    postfixes = ["", "", "", ""]
     descs = ["", "", "", ""]
     facilities = ["", "", "", ""]
     icons = ["", "", "", ""]
@@ -1029,6 +1030,7 @@ def operator_base_skills(operator_id, char_growth, base_skill, language, lang="e
         target_skill_id = f"spaceship_skill_{operator_id}_{bslevels[i]}"
         s_data = base_skill.get(target_skill_id)
         if s_data:
+            postfixes[i] = s_data.get("skillNamePostfix", "")
             name_id = str(s_data.get("name", {}).get("id", "0"))
             if name_id != "0":
                 raw_name = general.resolve_text(language[lang], name_id)
@@ -1057,8 +1059,10 @@ def operator_base_skills(operator_id, char_growth, base_skill, language, lang="e
 |name = {talent_names[0] or talent_names[1]}
 |icon = {icons[0] or icons[1]}
 |facility = {facilities[0] or facilities[1]}
+|postfix1 = {postfixes[0]}
 |cond1 = {conds[0]}
 |desc1 = {descs[0]}
+|postfix2 = {postfixes[1]}
 |cond2 = {conds[1]}
 |desc2 = {descs[1]}
 }}}}
@@ -1066,8 +1070,10 @@ def operator_base_skills(operator_id, char_growth, base_skill, language, lang="e
 |name = {talent_names[2] or talent_names[3]}
 |icon = {icons[2] or icons[3]}
 |facility = {facilities[2] or facilities[3]}
+|postfix1 = {postfixes[2]}
 |cond1 = {conds[2]}
 |desc1 = {descs[2]}
+|postfix2 = {postfixes[3]}
 |cond2 = {conds[3]}
 |desc2 = {descs[3]}
 }}}}"""
@@ -1227,5 +1233,27 @@ def get_operator_dialogue(operator_data, language, lang="en"):
         dialogue_entries.append((number, line))
 
     dialogue_entries.sort(key=lambda x: x[0])
-    
+
     return "\n".join([entry[1] for entry in dialogue_entries])
+
+def get_operator_recommended_weapons(operator_id, rec_weapon, weapon_basic, language, lang="en"):
+    rec_data = rec_weapon.get(operator_id, {})
+    if not rec_data:
+        return "", ""
+
+    def resolve_weapon_names(weapon_ids):
+        names = []
+        for wpn_id in weapon_ids:
+            wpn_data = weapon_basic.get(wpn_id)
+            if not wpn_data:
+                continue
+            name_id = wpn_data.get("engName", {}).get("id")
+            name = general.resolve_text(language[lang], name_id)
+            if name:
+                names.append(name)
+        return ", ".join(names)
+
+    matskill = resolve_weapon_names(rec_data.get("weaponIds1", []))
+    matstats = resolve_weapon_names(rec_data.get("weaponIds2", []))
+
+    return matskill, matstats

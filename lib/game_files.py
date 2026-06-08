@@ -41,7 +41,12 @@ TAG_DATA = "TagDataTable.json"
 GACHA_POOL_CONTENT = "GachaCharPoolContentTable.json"
 GACHA_POOL = "GachaCharPoolTable.json"
 POTENTIALS_ENUMS = os.path.join("Enums", "PotentialTalentEffectTable_enum.json")
-
+TEXT_TABLE  = "TextTable.json"
+DIALOG_TABLE = "DialogTextTable.json"
+RADIO_TABLE = "RadioTable.json"
+MISSION_TABLE = "MissionTable.json"
+MISSION_TYPE_INFO = "MissionTypeInfoTable.json"
+REC_WEAPON = "CharWpnRecommendTable.json"
 
 
 def build_paths(input_dir: str) -> dict[str, str]:
@@ -86,4 +91,10 @@ def build_paths(input_dir: str) -> dict[str, str]:
         "gacha_pool_content": os.path.join(input_dir, GACHA_POOL_CONTENT),
         "gacha_pool": os.path.join(input_dir, GACHA_POOL),
         "pot_effect_enums": os.path.join(input_dir, POTENTIALS_ENUMS),
+        "text_table": os.path.join(input_dir, TEXT_TABLE),
+        "dialog_table": os.path.join(input_dir, DIALOG_TABLE),
+        "radio_table": os.path.join(input_dir, RADIO_TABLE),
+        "mission_table": os.path.join(input_dir, MISSION_TABLE),
+        "mission_type_info": os.path.join(input_dir, MISSION_TYPE_INFO),
+        "rec_weapon": os.path.join(input_dir, REC_WEAPON),
     }
