@@ -17,6 +17,7 @@ TIPS_ORANGE = re.compile(r"<@tips\.orange>(.*?)</>") # Item help text
 TIPS_PURPLE = re.compile(r"<@tips\.purple>(.*?)</>") # Item help text
 TIPS_KEY = re.compile(r"<@tips\.key>(.*?)</>") # Item help text
 OBT_KEY = re.compile(r"<@obt\.key>(.*?)</>") # Item help text
+QU_KEY = re.compile(r"<@qu\.key>(.*?)</>") # Item help text
 
 # Text that uses the {{Glossary}} template
 BA_LASTCOMBO = re.compile(r"<#ba\.lastcombo>(.*?)</>")
@@ -73,6 +74,7 @@ BA_ORIGINIUM = re.compile(r"<#ba\.originium>(.*?)</>")
 BA_CRYSTBREAK = re.compile(r"<#ba\.crystbreak>(.*?)</>")
 BA_SPEEDUP = re.compile(r"<#ba\.speedup>(.*?)</>")
 BA_ROSSI = re.compile(r"<#ba\.rossi>(.*?)</>")
+BA_ABSORB = re.compile(r"<#ba\.absorb>(.*?)</>")
 
 def efdb_format(text: str) -> str:
     if not text:
@@ -97,6 +99,7 @@ def efdb_format(text: str) -> str:
     text = BA_ETHER.sub(r"{{Color|\1|1e}}", text) # Aether Damage
     text = TIPS_ORANGE.sub(r"{{Color|\1|1a}}", text) # Item help text
     text = TIPS_PURPLE.sub(r"{{Color|\1|1e}}", text) # Item help text
+    text = QU_KEY.sub(r"{{Color|\1|0}}", text) # Item help text
     text = TIPS_KEY.sub(lambda m: f"[[{m.group(1).replace('[', '(').replace(']', ')')}]]", text) # Item help text
     text = OBT_KEY.sub(lambda m: f"[[{m.group(1).replace('[', '(').replace(']', ')')}]]", text) # Item help text
 
@@ -155,6 +158,7 @@ def efdb_format(text: str) -> str:
     text = BA_CRYSTBREAK.sub(r"{{G|Shatter|\1}}", text)
     text = BA_SPEEDUP.sub(r"{{G|Haste|\1}}", text)
     text = BA_ROSSI.sub(r"{{G|Razor Clawmark|\1}}", text)
+    text = BA_ABSORB.sub(r"{{G|Absorb|\1}}", text)
 
     return text
 
@@ -165,6 +169,63 @@ def module_format(text: str) -> str:
     # Remove hyphen from consumables tip text
     text = text.replace(" - <@tips.orange>", "* <@tips.orange>")
     text = text.replace(" - <@tips.purple>", "* <@tips.purple>")
+
+    # Text that uses the {{Glossary}} template
+    text = BA_LASTCOMBO.sub(r"{{G|Final Strike|\1}}", text)
+    text = BA_POISEKNOT.sub(r"{{G|Stagger Node|\1}}", text)
+    text = BA_RETURN.sub(r"{{G|SP Return|\1}}", text)
+    text = BA_DOT.sub(r"{{G|DMG Over Time|\1}}", text)
+    text = BA_SPELLDMG.sub(r"{{G|DMG Type|\1}}", text)
+    text = BA_STATUSLEVEL.sub(r"{{G|Status Level|\1}}", text)
+    text = BA_CONSUME.sub(r"{{G|Debuff Consumption|\1}}", text)
+    text = BA_PHYSICALSTATUS.sub(r"{{G|Physical Status|\1}}", text)
+    text = BA_NOGUARD.sub(r"{{G|Vulnerable|\1}}", text)
+    text = BA_AIRBORNE.sub(r"{{G|Lift|\1}}", text)
+    text = BA_KNOCKDOWN.sub(r"{{G|Knock Down|\1}}", text)
+    text = BA_CRUSH.sub(r"{{G|Crush|\1}}", text)
+    text = BA_FRACTURE.sub(r"{{G|Breach|\1}}", text)
+    text = BA_SPELLINFLICT.sub(r"{{G|Arts Infliction|\1}}", text)
+    text = BA_SPELLINFLICTONCHAR.sub(r"{{G|Arts Infliction|\1}}", text)
+    text = BA_FIREINFLICT.sub(r"{{G|Heat Infliction|\1}}", text)
+    text = BA_PULSEINFLICT.sub(r"{{G|Electric Infliction|\1}}", text)
+    text = BA_CRYSTINFLICT.sub(r"{{G|Cryo Infliction|\1}}", text)
+    text = BA_CRYSTONCHAR.sub(r"{{G|Cryo Infliction|\1}}", text)
+    text = BA_NATURALINFLICT.sub(r"{{G|Nature Infliction|\1}}", text)
+    text = BA_SPELLSTATUS.sub(r"{{G|Arts Reaction|\1}}", text)
+    text = BA_BURNING.sub(r"{{G|Combustion|\1}}", text)
+    text = BA_CONDUCT.sub(r"{{G|Electrification|\1}}", text)
+    text = BA_FROZEN.sub(r"{{G|Solidification|\1}}", text)
+    text = BA_FROZENONCHAR.sub(r"{{G|Solidification|\1}}", text)
+    text = BA_CORRUPT.sub(r"{{G|Corrosion|\1}}", text)
+    text = BA_SPELLBURST.sub(r"{{G|Arts Burst|\1}}", text)
+    text = BA_FIREBURST.sub(r"{{G|Heat Burst|\1}}", text)
+    text = BA_PULSEBURST.sub(r"{{G|Electric Burst|\1}}", text)
+    text = BA_CRYSTBURST.sub(r"{{G|Cryo Burst|\1}}", text)
+    text = BA_NATURALBURST.sub(r"{{G|Nature Burst|\1}}", text)
+    text = BA_ENHANCE.sub(r"{{G|Amp|\1}}", text)
+    text = BA_SPELLENHANCE.sub(r"{{G|Arts Amp|\1}}", text)
+    text = BA_FIREENHANCE.sub(r"{{G|Heat Amp|\1}}", text)
+    text = BA_PULSEENHANCE.sub(r"{{G|Electric Amp|\1}}", text)
+    text = BA_CRYSTENHANCE.sub(r"{{G|Cryo Amp|\1}}", text)
+    text = BA_NATURALENHANCE.sub(r"{{G|Nature Amp|\1}}", text)
+    text = BA_VULNERABLE.sub(r"{{G|Susceptible|\1}}", text)
+    text = BA_PHYSICALVUL.sub(r"{{G|Physical Susceptibility|\1}}", text)
+    text = BA_SPELLVUL.sub(r"{{G|Arts Susceptibility|\1}}", text)
+    text = BA_FIREVUL.sub(r"{{G|Heat Susceptibility|\1}}", text)
+    text = BA_PULSEVUL.sub(r"{{G|Electric Susceptibility|\1}}", text)
+    text = BA_CRYSTVUL.sub(r"{{G|Cryo Susceptibility|\1}}", text)
+    text = BA_NATURALVUL.sub(r"{{G|Nature Susceptibility|\1}}", text)
+    text = BA_DISPEL.sub(r"{{G|Dispel|\1}}", text)
+    text = BA_COMBO.sub(r"{{G|Link|\1}}", text)
+    text = BA_GUARD.sub(r"{{G|Protect|\1}}", text)
+    text = BA_SHIELD.sub(r"{{G|Shield|\1}}", text)
+    text = BA_SLOW.sub(r"{{G|Slow|\1}}", text)
+    text = BA_WEAK.sub(r"{{G|Weaken|\1}}", text)
+    text = BA_ORIGINIUM.sub(r"{{G|Originium Crystal|\1}}", text)
+    text = BA_CRYSTBREAK.sub(r"{{G|Shatter|\1}}", text)
+    text = BA_SPEEDUP.sub(r"{{G|Haste|\1}}", text)
+    text = BA_ROSSI.sub(r"{{G|Razor Clawmark|\1}}", text)
+    text = BA_ABSORB.sub(r"{{G|Absorb|\1}}", text)
 
     # Text that uses the <span> template
     text = BA_VUP.sub(r"<blue>\1</span>", text)
@@ -181,63 +242,8 @@ def module_format(text: str) -> str:
     #text = BA_ETHER.sub(r"{{Color|\1|1e}}", text) # Aether Damage
     text = TIPS_ORANGE.sub(r"{{Color|\1|1a}}", text) # Item help text
     text = TIPS_PURPLE.sub(r"{{Color|\1|1e}}", text) # Item help text
+    text = QU_KEY.sub(r"{{Color|\1|0}}", text) # Item help text
     text = TIPS_KEY.sub(lambda m: f"[[{m.group(1).replace('[', '(').replace(']', ')')}]]", text) # Item help text
     text = OBT_KEY.sub(lambda m: f"[[{m.group(1).replace('[', '(').replace(']', ')')}]]", text) # Item help text
-
-    # Text that uses the {{Glossary}} template
-    text = BA_LASTCOMBO.sub(r"{{G|Final Strike|\1}}", text)
-    text = BA_POISEKNOT.sub(r"{{G|Stagger Node|\1}}", text)
-    text = BA_RETURN.sub(r"{{G|SP Return|\1}}", text)
-    text = BA_DOT.sub(r"{{G|DMG Over Time|\1}}", text)
-    text = BA_SPELLDMG.sub(r"{{G|DMG Type|\1}}", text)
-    text = BA_STATUSLEVEL.sub(r"{{G|Status Level|\1}}", text)
-    text = BA_CONSUME.sub(r"{{G|Debuff Consumption|\1}}", text)
-    text = BA_PHYSICALSTATUS.sub(r"{{G|Physical Status|\1}}", text)
-    text = BA_NOGUARD.sub(r"{{G|Vulnerable|\1}}", text)
-    text = BA_AIRBORNE.sub(r"{{G|Lift|\1}}", text)
-    text = BA_KNOCKDOWN.sub(r"{{G|Knock Down|\1}}", text)
-    text = BA_CRUSH.sub(r"{{G|Crush|\1}}", text)
-    text = BA_FRACTURE.sub(r"{{G|Breach|\1}}", text)
-    text = BA_SPELLINFLICT.sub(r"{{G|Arts Infliction|\1}}", text)
-    text = BA_SPELLINFLICTONCHAR.sub(r"{{G|Arts Infliction|\1}}", text)
-    text = BA_FIREINFLICT.sub(r"{{G|Heat Infliction|\1}}", text)
-    text = BA_PULSEINFLICT.sub(r"{{G|Electric Infliction|\1}}", text)
-    text = BA_CRYSTINFLICT.sub(r"{{G|Cryo Infliction|\1}}", text)
-    text = BA_CRYSTONCHAR.sub(r"{{G|Cryo Infliction|\1}}", text)
-    text = BA_NATURALINFLICT.sub(r"{{G|Nature Infliction|\1}}", text)
-    text = BA_SPELLSTATUS.sub(r"{{G|Arts Reaction|\1}}", text)
-    text = BA_BURNING.sub(r"{{G|Combustion|\1}}", text)
-    text = BA_CONDUCT.sub(r"{{G|Electrification|\1}}", text)
-    text = BA_FROZEN.sub(r"{{G|Solidification|\1}}", text)
-    text = BA_FROZENONCHAR.sub(r"{{G|Solidification|\1}}", text)
-    text = BA_CORRUPT.sub(r"{{G|Corrosion|\1}}", text)
-    text = BA_SPELLBURST.sub(r"{{G|Arts Burst|\1}}", text)
-    text = BA_FIREBURST.sub(r"{{G|Heat Burst|\1}}", text)
-    text = BA_PULSEBURST.sub(r"{{G|Electric Burst|\1}}", text)
-    text = BA_CRYSTBURST.sub(r"{{G|Cryo Burst|\1}}", text)
-    text = BA_NATURALBURST.sub(r"{{G|Nature Burst|\1}}", text)
-    text = BA_ENHANCE.sub(r"{{G|Amp|\1}}", text)
-    text = BA_SPELLENHANCE.sub(r"{{G|Arts Amp|\1}}", text)
-    text = BA_FIREENHANCE.sub(r"{{G|Heat Amp|\1}}", text)
-    text = BA_PULSEENHANCE.sub(r"{{G|Electric Amp|\1}}", text)
-    text = BA_CRYSTENHANCE.sub(r"{{G|Cryo Amp|\1}}", text)
-    text = BA_NATURALENHANCE.sub(r"{{G|Nature Amp|\1}}", text)
-    text = BA_VULNERABLE.sub(r"{{G|Susceptible|\1}}", text)
-    text = BA_PHYSICALVUL.sub(r"{{G|Physical Susceptibility|\1}}", text)
-    text = BA_SPELLVUL.sub(r"{{G|Arts Susceptibility|\1}}", text)
-    text = BA_FIREVUL.sub(r"{{G|Heat Susceptibility|\1}}", text)
-    text = BA_PULSEVUL.sub(r"{{G|Electric Susceptibility|\1}}", text)
-    text = BA_CRYSTVUL.sub(r"{{G|Cryo Susceptibility|\1}}", text)
-    text = BA_NATURALVUL.sub(r"{{G|Nature Susceptibility|\1}}", text)
-    text = BA_DISPEL.sub(r"{{G|Dispel|\1}}", text)
-    text = BA_COMBO.sub(r"{{G|Link|\1}}", text)
-    text = BA_GUARD.sub(r"{{G|Protect|\1}}", text)
-    text = BA_SHIELD.sub(r"{{G|Shield|\1}}", text)
-    text = BA_SLOW.sub(r"{{G|Slow|\1}}", text)
-    text = BA_WEAK.sub(r"{{G|Weaken|\1}}", text)
-    text = BA_ORIGINIUM.sub(r"{{G|Originium Crystal|\1}}", text)
-    text = BA_CRYSTBREAK.sub(r"{{G|Shatter|\1}}", text)
-    text = BA_SPEEDUP.sub(r"{{G|Haste|\1}}", text)
-    text = BA_ROSSI.sub(r"{{G|Razor Clawmark|\1}}", text)
 
     return text

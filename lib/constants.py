@@ -294,6 +294,37 @@ ITEM_TYPE_NAME = {
     98: "Sanity Usage Permit"
 }
 
+MISSION_IMPORTANCE = {
+    0: "Urgent",
+    1: "Important",
+    2: "Secondary",
+}
+
+MISSION_TYPE = {
+    0: "Main Mission",
+    1: "Exploration Mission",
+    2: "Side Mission",
+    3: "Event Mission",
+    4: "Commission",
+}
+
+LEVEL_LOCATION = {
+    "map01_lv001": "The Hub",
+    "map01_lv002": "Valley Pass",
+    "map01_lv003": "Aburrey Quarry",
+    "map01_lv004": "Unknown",
+    "map01_lv005": "Originium Science Park",
+    "map01_lv006": "Origin Lodespring",
+    "map01_lv007": "Power Plateau",
+    "map02_lv001": "Jingyu Valley",
+    "map02_lv002": "Wuling City",
+    "map02_lv003": "Qingbo Stockade",
+    "map02_lv004": "Marker Stone",
+    "map02_lv005": "Test Area",
+    "map02_lv006": "Sword Vault Dale",
+    "map02_lv007": "North Wuling Exclusion Zone",
+}
+
 DIALOGUE_TYPE = {
     "Operation Prep 1": 1,
     "Operation Prep 2": 2,

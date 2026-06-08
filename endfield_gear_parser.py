@@ -156,7 +156,7 @@ with open(GEAR_SET_TEMPLATE_OUTPUT, "w", encoding="utf-8") as out:
 '''Template:Gear Set'''
 <includeonly>
 {{| width="100%" class="wikitable" cellpadding="5" style="margin-top:0; font-size:16px; border-style: hidden;"
-! style="background-color:#2a2a2a; border-bottom: hidden; padding: 5px;" | [[{{{{{{1}}}}}}]] Gear Set
+! style="background-color:#2a2a2a; border-bottom: hidden; padding: 5px;" | [[{{{{{{1}}}}}}]] Set Items
 |-
 | <div style="display: block; text-align: center; border-style: hidden;">{{{{#switch: {{{{{{1}}}}}}
 {gear_set_lines}

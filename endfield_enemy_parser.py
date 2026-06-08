@@ -80,13 +80,19 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         wiki_overview = ""
         wiki_addition = ""
         wiki_changelog = ""
+        wiki_enemy_tab = ""
 
         page = site.client.pages[enemy_name_clean]
         if page.exists:
             wikitext = page.text()
+            parsed_code = mwparserfromhell.parse(wikitext)
             wiki_overview = get_wiki_section(wikitext, "Overview")
             wiki_addition = get_wiki_section(wikitext, "See Also")
             wiki_changelog = get_wiki_section(wikitext, "Changelog")
+            for template in parsed_code.filter_templates():
+                if template.name.matches("Enemy tab"):
+                    wiki_enemy_tab = "{{Enemy tab}}\n"
+                    break
 
         # Enemy description
         desc_id = display_data.get("description", {}).get("id")
@@ -100,6 +106,7 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         type_data = enemy_type.get(str(display_type_id), {})
         type_name_id = type_data.get("name", {}).get("id")
         enemy_class = general.resolve_text(language["en"], type_name_id)
+        enemy_article = "an" if enemy_class and enemy_class[0].lower() in "aeiou" else "a"
 
         # Enemy abilities
         enemy_ability_text = enemy.resolve_enemy_abilities(display_data, enemy_ability, language)
@@ -119,7 +126,7 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         # Output
         out.write(f"""{{{{-start-}}}}
 '''{enemy_name_clean}'''
-{{{{Enemy infobox
+{wiki_enemy_tab}{{{{Enemy infobox
 |name = {enemy_name}
 |image = {enemy_name_image}_sprite.png
 |filename = {enemy_id}
@@ -134,7 +141,7 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |attack = 
 |damage = 
 |upgrade = }}}}
-'''{enemy_name}''' is a [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]''.{enemy_alternate_text}
+'''{enemy_name}''' is {enemy_article} [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]''.{enemy_alternate_text}
 
 {{{{Enemy description|{enemy_desc}}}}}
 

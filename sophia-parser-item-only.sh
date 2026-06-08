@@ -74,7 +74,7 @@ python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/seeds_page_data.txt" -noti
 echo "Pushing container data to the wiki..."
 python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/containers_page_data.txt" -notitle -summary:"$SUMMARY"
 echo "Pushing consumable data to the wiki..."
-python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/consumables_page_data.txt" -notitle -summary:"$SUMMARY"
+python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/usables_page_data.txt" -notitle -summary:"$SUMMARY"
 echo "Pushing package data to the wiki..."
 python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/packages_page_data.txt" -notitle -summary:"$SUMMARY"
 echo "Pushing system blueprint data to the wiki..."
