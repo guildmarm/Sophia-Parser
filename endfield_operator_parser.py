@@ -74,6 +74,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         # mw.cleric input
         wiki_params = {p: "" for p in ['fullname', 'fileno', 'theme', 'illustrator', 'jpcv', 'cncv', 'encv', 'krcv', 'matskill', 'matstats']}
         wiki_skills = {}
+        wiki_talents = {}
         wiki_profile = ""
         wiki_changelog = ""
 
@@ -91,6 +92,10 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
                     s_name = str(template.get("name").value).strip()
                     s_info = str(template.get("info").value).strip() if template.has("info") else ""
                     wiki_skills[s_name] = s_info
+                if template.name.matches("Operator talent") and template.has("name"):
+                    t_name = str(template.get("name").value).strip()
+                    t_info = str(template.get("info").value).strip() if template.has("info") else ""
+                    wiki_talents[t_name] = t_info
             
             wiki_profile = get_wiki_section(wikitext, "Profile")
             wiki_changelog = get_wiki_section(wikitext, "Changelog")
@@ -151,9 +156,9 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_skill_items = operator.get_operator_skill_items(operator_id, char_growth, item_table, language)
 
         # Operator Talents and Base Skills
-        operator_mainattr_talent = operator.main_attribute_talent(operator_id, char_growth, language, mainAttr)
-        operator_unique_talent = operator.operator_passive_talents(operator_id, operator_name, char_growth, potential_effect, language, enums_table)
-        operator_gear_talent = operator.operator_outfit_talent(operator_id, char_growth, language)
+        operator_mainattr_talent = operator.main_attribute_talent(operator_id, char_growth, language, mainAttr, wiki_talents=wiki_talents)
+        operator_unique_talent = operator.operator_passive_talents(operator_id, operator_name, char_growth, potential_effect, language, enums_table, wiki_talents=wiki_talents)
+        operator_gear_talent = operator.operator_outfit_talent(operator_id, char_growth, language, wiki_talents=wiki_talents)
         operator_talent_costs = operator.operator_talent_costs(operator_id, char_growth, item_table, language, mainAttr)
         operator_base_skills = operator.operator_base_skills(operator_id, char_growth, base_skill, language)
         base_skill_costs = operator.operator_base_talent_costs(operator_id, char_growth, item_table, base_skill, language)
@@ -253,7 +258,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 {wiki_changelog}
 
 ==Navigation==
-{{{{Operators}}}}
+{{{{Operators_nav}}}}
 
 {{{{-stop-}}}}
 

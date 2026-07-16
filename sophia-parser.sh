@@ -49,7 +49,7 @@ python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/full_operator_page_data.tx
 # Items
 echo "Pushing employment contract data to the wiki..."
 python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/employment_contract_page_data.txt" -force -notitle -summary:"$SUMMARY"
-echo "Pushing oeprator token data to the wiki..."
+echo "Pushing operator token data to the wiki..."
 python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/operator_tokens_page_data.txt" -force -notitle -summary:"$SUMMARY"
 echo "Pushing operator snapshot data to the wiki..."
 python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/operator_snapshots_page_data.txt" -force -notitle -summary:"$SUMMARY"

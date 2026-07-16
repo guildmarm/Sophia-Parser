@@ -483,25 +483,18 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
             if not skill_entry: continue
             bundles = skill_entry.get("SkillPatchDataBundle", [])
             for bundle in bundles:
-                name_list = bundle.get("subDescNameList", []) or []
-                values_list = bundle.get("subDescList", []) or []
-                val_idx = 0
-                for name_entry in name_list:
-                    nid = name_entry.get("id")
+                data_list = bundle.get("subDescDataList", []) or []
+                for entry in data_list:
+                    nid = entry.get("name", {}).get("id")
+                    value = entry.get("desc", "")
+                    condition_id = entry.get("conditionId", "")
                     if nid and str(nid) != "0":
-                        value = values_list[val_idx] if val_idx < len(values_list) else ""
-                        val_idx += 1
                         label_key = str(nid)
                         stat_label = text_table.get(label_key, "").strip()
                         if not stat_label: stat_label = f"UNKNOWN_{label_key}"
-                        if stat_label not in stat_groups: stat_groups[stat_label] = []
-                        if value != "": stat_groups[stat_label].append(value)
-                while val_idx < len(values_list):
-                    leftover = values_list[val_idx]
-                    val_idx += 1
-                    stat_label = f"LEFTOVER_{s_id}"
-                    if stat_label not in stat_groups: stat_groups[stat_label] = []
-                    stat_groups[stat_label].append(leftover)
+                        group_key = (condition_id, stat_label)
+                        if group_key not in stat_groups: stat_groups[group_key] = []
+                        if value != "": stat_groups[group_key].append(value)
         return stat_groups
 
     def extract_cost_or_cooldown(skill_ids, s_key):
@@ -538,57 +531,122 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
     ]
     
     skill_map = cdata.get("skillGroupMap", {})
-    results = []
 
-    for s_key, type_num, icon_prefix in skill_order:
-        skill = skill_map.get(f"{operator_id}_{s_key}")
-        if not skill: continue
+    dual_mode = any(
+        bool(skill_map.get(f"{operator_id}_{s_key}", {}).get("conditionIcon1")) and
+        skill_map.get(f"{operator_id}_{s_key}", {}).get("conditionIcon1") !=
+        skill_map.get(f"{operator_id}_{s_key}", {}).get("conditionIcon2")
+        for s_key, _, _ in skill_order
+    )
+    passes = [1, 2] if dual_mode else [None]
 
-        icon_suffix = weapon_sanitized if s_key == "NormalAttack" else operator_name
-        name_text = text_table.get(str(skill.get("name", {}).get("id", "")), "")
-        raw_desc = text_table.get(str(skill.get("desc", {}).get("id", "")), "")
+    tab_names = {}
+    if dual_mode:
+        for s_key, _, _ in skill_order:
+            skill = skill_map.get(f"{operator_id}_{s_key}")
+            if skill:
+                for i in (1, 2):
+                    nid = str(skill.get(f"conditionName{i}", {}).get("id", "0"))
+                    if nid != "0":
+                        name = text_table.get(nid, "").strip()
+                        if name:
+                            tab_names[i] = name
+                if len(tab_names) == 2:
+                    break
 
-        skill_ids = skill.get("skillIdList", [])
-        desc_text = resolve_blackboard_placeholders(raw_desc, skill_ids)
-        desc_text = efdb_format(desc_text)
-        desc_text = clean_text(desc_text)
+    pass_results = {k: [] for k in passes}
 
-        if s_key == "NormalAttack":
-            desc_text = wrap_label(desc_text, "BASIC ATTACK:")
-            desc_text = desc_text.replace("\nDIVE ATTACK:", "<br /><b>DIVE ATTACK:</b>")
-            desc_text = desc_text.replace("\nFINISHER:", "<br /><b>FINISHER:</b>")
-        elif s_key in ["NormalSkill", "UltimateSkill"]:
-            desc_text = "<b>SKILL DESCRIPTION:</b> " + desc_text
-        elif s_key == "ComboSkill":
-            desc_text = wrap_label(desc_text, "COMBO TRIGGER:")
-            if "\n" in desc_text:
-                desc_text = desc_text.replace("\n", "<br /><b>SKILL DESCRIPTION:</b> ", 1)
+    for pass_num in passes:
+        for s_key, type_num, icon_prefix in skill_order:
+            skill = skill_map.get(f"{operator_id}_{s_key}")
+            if not skill: continue
 
-        stat_lines, idx = [], 1
-        cost_line = extract_cost_or_cooldown(skill_ids, s_key)
-        if cost_line:
-            l, v = cost_line
-            stat_lines.append(f"|stat{idx}= {l}, {', '.join(v)}")
-            idx += 1
+            icon_suffix = weapon_sanitized if s_key == "NormalAttack" else operator_name
+            name_text = text_table.get(str(skill.get("name", {}).get("id", "")), "")
 
-        stat_groups = extract_skill_stats(skill_ids)
-        for s_label, vals in stat_groups.items():
-            stat_lines.append(f"|stat{idx}= {s_label}, {', '.join(vals)}" if vals else f"|stat{idx}= {s_label}")
-            idx += 1
+            base_desc = text_table.get(str(skill.get("desc", {}).get("id", "")), "")
 
-        if not stat_lines: stat_lines = ["|stat1="]
-        
-        stat_block = "\n".join(stat_lines)
-        results.append(f"""{{{{Combat skill
+            raw_desc = ""
+            condition_prefix = ""
+            if pass_num is not None:
+                cdesc_id = str(skill.get(f"conditionDesc{pass_num}", {}).get("id", "0"))
+                cpost_id = str(skill.get(f"conditionPostDesc{pass_num}", {}).get("id", "0"))
+                cdesc = text_table.get(cdesc_id, "").strip() if cdesc_id != "0" else ""
+                cpost = text_table.get(cpost_id, "").strip() if cpost_id != "0" else ""
+                if cdesc:
+                    cdesc_clean = re.sub(r'/\*|\*/', '', cdesc).strip()
+                    if s_key == "ComboSkill" and cpost:
+                        condition_prefix = cdesc_clean
+                        raw_desc = cpost
+                    else:
+                        parts = [p for p in (base_desc, cdesc_clean, cpost) if p]
+                        raw_desc = "\n".join(parts)
+
+            if not raw_desc:
+                raw_desc = base_desc
+
+            skill_ids = skill.get("skillIdList", [])
+            desc_text = resolve_blackboard_placeholders(raw_desc, skill_ids)
+            desc_text = re.sub(r'\{floor:[^{}]+\}', 'N', desc_text)
+            desc_text = efdb_format(desc_text)
+            desc_text = clean_text(desc_text)
+
+            if s_key == "NormalAttack":
+                desc_text = wrap_label(desc_text, "BASIC ATTACK:")
+                desc_text = desc_text.replace("\nDIVE ATTACK:", "<b>DIVE ATTACK:</b>")
+                desc_text = desc_text.replace("\nFINISHER:", "<b>FINISHER:</b>")
+            elif s_key in ["NormalSkill", "UltimateSkill"]:
+                desc_text = "<b>SKILL DESCRIPTION:</b> " + desc_text
+            elif s_key == "ComboSkill":
+                desc_text = wrap_label(desc_text, "COMBO TRIGGER:")
+                if "\n" in desc_text:
+                    desc_text = desc_text.replace("\n", "<br /><b>SKILL DESCRIPTION:</b> ", 1)
+                if condition_prefix:
+                    cond_text = resolve_blackboard_placeholders(condition_prefix, skill_ids)
+                    cond_text = re.sub(r'\{floor:[^{}]+\}', 'N', cond_text)
+                    cond_text = efdb_format(cond_text)
+                    cond_text = clean_text(cond_text)
+                    cond_text = cond_text.replace("\n", "<br />")
+                    desc_text = cond_text + "<br />" + desc_text
+            desc_text = desc_text.replace("\n", "<br />")
+
+            stat_lines, idx = [], 1
+            cost_line = extract_cost_or_cooldown(skill_ids, s_key)
+            if cost_line:
+                l, v = cost_line
+                stat_lines.append(f"|stat{idx}= {l}, {', '.join(v)}")
+                idx += 1
+
+            stat_groups = extract_skill_stats(skill_ids)
+            active_condition = skill.get(f"conditionId{pass_num}", "") if pass_num is not None else None
+            for (condition_id, s_label), vals in stat_groups.items():
+                if active_condition is not None and condition_id and condition_id != active_condition:
+                    continue
+                display_label = s_label
+                stat_lines.append(f"|stat{idx}= {display_label}, {', '.join(vals)}" if vals else f"|stat{idx}= {display_label}")
+                idx += 1
+
+            if not stat_lines: stat_lines = ["|stat1="]
+
+            icon_num = "" if s_key == "NormalAttack" else (str(pass_num) if pass_num is not None else "")
+            stat_block = "\n".join(stat_lines)
+            pass_results[pass_num].append(f"""{{{{Combat skill
 |name= {name_text}
-|icon= {icon_prefix}-{icon_suffix}
+|icon= {icon_prefix}-{icon_suffix}{icon_num}
 |type= {{{{SB|{type_num}}}}}
 |info= {wiki_skills.get(name_text, "")}
 |desc= {desc_text}
 {stat_block}
 }}}}""")
 
-    return "\n".join(results)
+    if dual_mode:
+        tab1 = tab_names.get(1, "1")
+        tab2 = tab_names.get(2, "2")
+        block1 = "\n".join(pass_results[1])
+        block2 = "\n".join(pass_results[2])
+        return f"<tabber>\n{tab1}=\n{block1}\n|-|\n{tab2}=\n{block2}\n</tabber>"
+
+    return "\n".join(pass_results[None])
 
 def get_operator_skill_items(operator_id, char_growth, item_table, language, lang="en"):
     text_table = language[lang]
@@ -674,7 +732,7 @@ def get_operator_skill_items(operator_id, char_growth, item_table, language, lan
     lines.append("{{Skill upgrade end}}")
     return "\n".join(lines)
 
-def main_attribute_talent(operator_id, char_growth, language, mainAttr, lang="en"):
+def main_attribute_talent(operator_id, char_growth, language, mainAttr, wiki_talents={}, lang="en"):
     text_table = language.get(lang, {})
     cdata = char_growth.get(operator_id)
     if not cdata:
@@ -706,6 +764,7 @@ def main_attribute_talent(operator_id, char_growth, language, mainAttr, lang="en
     return f"""{{{{Operator talent
 |name = {talent_name}
 |icon = {mainAttr}
+|info = {wiki_talents.get(talent_name, "")}
 |cond1 = {conds[0]}
 |desc1 = {descs[0]}
 |cond2 = {conds[1]}
@@ -716,7 +775,7 @@ def main_attribute_talent(operator_id, char_growth, language, mainAttr, lang="en
 |desc4 = {descs[3]}
 }}}}"""
 
-def operator_outfit_talent(operator_id, char_growth, language, lang="en"):
+def operator_outfit_talent(operator_id, char_growth, language, wiki_talents={}, lang="en"):
     text_table = language.get(lang, {})
     cdata = char_growth.get(operator_id)
     if not cdata:
@@ -746,6 +805,7 @@ def operator_outfit_talent(operator_id, char_growth, language, lang="en"):
     return f"""{{{{Operator talent
 |name = {talent_name}
 |icon = Gear icon
+|info = {wiki_talents.get(talent_name, "")}
 |cond1 = {conds[0]}
 |desc1 = {descs[0]}
 |cond2 = {conds[1]}
@@ -754,7 +814,7 @@ def operator_outfit_talent(operator_id, char_growth, language, lang="en"):
 |desc3 = {descs[2]}
 }}}}"""
 
-def operator_passive_talents(operator_id, operator_name, char_growth, potential_effect, language, enums_table, lang="en"):
+def operator_passive_talents(operator_id, operator_name, char_growth, potential_effect, language, enums_table, wiki_talents={}, lang="en"):
     op_data = char_growth.get(operator_id, {})
     talent_nodes = op_data.get("talentNodeMap", {})
 
@@ -899,9 +959,12 @@ def operator_passive_talents(operator_id, operator_name, char_growth, potential_
             descs[i] = ""
             conds[i] = ""
 
+    talent1_name = talent_names[0] or talent_names[1] or talent_names[2]
+    talent2_name = talent_names[3] or talent_names[4] or talent_names[5]
     return f"""{{{{Operator talent
-|name = {talent_names[0] or talent_names[1] or talent_names[2]}
+|name = {talent1_name}
 |icon = {operator_name} Talent 1 icon
+|info = {wiki_talents.get(talent1_name, "")}
 |cond1 = {conds[0]}
 |desc1 = {descs[0]}
 |cond2 = {conds[1]}
@@ -910,8 +973,9 @@ def operator_passive_talents(operator_id, operator_name, char_growth, potential_
 |desc3 = {descs[2]}
 }}}}
 {{{{Operator talent
-|name = {talent_names[3] or talent_names[4] or talent_names[5]}
+|name = {talent2_name}
 |icon = {operator_name} Talent 2 icon
+|info = {wiki_talents.get(talent2_name, "")}
 |cond1 = {conds[3]}
 |desc1 = {descs[3]}
 |cond2 = {conds[4]}

@@ -133,7 +133,7 @@ with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
 
 ==Navigation==
-{{{{Weapons}}}}
+{{{{Weapons_nav}}}}
 
 [[Category:Weapons]]
 [[Category:{weapon_type}s]]
