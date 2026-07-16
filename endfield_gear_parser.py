@@ -17,6 +17,7 @@ paths = game_files.build_paths(const.INPUT_DIR)
 
 item_table = io.load_json(paths["item_table"])
 equip_formula = io.load_json(paths["equip_formula"])
+equip_formula_chain = io.load_json(paths["equip_formula_chain"])
 equip_suit = io.load_json(paths["equip_suit"])
 equip_table = io.load_json(paths["equip_table"])
 system_jump_table = io.load_json(paths["system_jump"])
@@ -82,7 +83,7 @@ with open(GEAR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         gear_tvalue = gear.format_stat_value(gear_tvalue, gear_artifice)
 
         # Gear recipe
-        gear_recipe = gear.resolve_gear_recipe(gear_id, equip_formula, item_table, language)
+        gear_recipe = gear.resolve_gear_recipe(gear_id, equip_formula, equip_formula_chain, item_table, language)
 
         out.write(f"""{{{{-start-}}}}
 '''{gear_name_clean}'''

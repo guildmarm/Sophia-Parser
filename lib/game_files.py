@@ -21,6 +21,7 @@ WEAPON_UPGRADE = "WeaponUpgradeTemplateTable.json"
 SYSTEM_JUMP = "SystemJumpTable.json"
 EQUIP_ITEM = "EquipItemTable.json"
 EQUIP_FORMULA = "EquipFormulaTable.json"
+EQUIP_FORMULA_CHAIN = "EquipFormulaChainTable.json"
 EQUIP_PACK_FORMULA = "EquipPackFormulaTable.json"
 EQUIP_PACK = "EquipPackTable.json"
 EQUIP_SUIT = "EquipSuitTable.json"
@@ -71,6 +72,7 @@ def build_paths(input_dir: str) -> dict[str, str]:
         "system_jump": os.path.join(input_dir, SYSTEM_JUMP),
         "equip_item": os.path.join(input_dir, EQUIP_ITEM),
         "equip_formula": os.path.join(input_dir, EQUIP_FORMULA),
+        "equip_formula_chain": os.path.join(input_dir, EQUIP_FORMULA_CHAIN),
         "equip_pack_formula": os.path.join(input_dir, EQUIP_PACK_FORMULA),
         "equip_pack": os.path.join(input_dir, EQUIP_PACK),
         "equip_suit": os.path.join(input_dir, EQUIP_SUIT),

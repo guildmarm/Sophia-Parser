@@ -147,7 +147,7 @@ def resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language, lang
         def repl(match):
             sign = match.group("sign") or ""
             expr = match.group("expr")
-            fmt = match.group("fmt")
+            fmt = match.group("fmt") or ""
             expr_eval = expr
             for key, val in blackboard.items():
                 expr_eval = re.sub(rf"\b{re.escape(key)}\b", str(val), expr_eval)
@@ -156,42 +156,60 @@ def resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language, lang
             except Exception:
                 return match.group(0)
 
-            if fmt == "0%":
-                val_num = result * 100
-                val_str = f"{int(round(val_num))}%"
+            is_pct = fmt.endswith("%")
+            if is_pct:
+                result = result * 100
+
+            prec_match = re.search(r"0\.(\d+)", fmt)
+            if prec_match:
+                precision = len(prec_match.group(1))
+                val_str = f"{result:.{precision}f}"
+            elif is_pct:
+                val_str = f"{int(round(result))}"
             else:
-                val_str = f"{int(round(result))}" if float(result).is_integer() else f"{result:.1f}"
+                val_str = f"{int(round(result))}" if float(result).is_integer() else f"{result:g}"
+
+            if is_pct:
+                val_str += "%"
             return f"{sign}{val_str}"
 
-        pattern = r"(?P<sign>[+-]?)\{(?P<expr>[^{}:]+)(?::(?P<fmt>0%?))?\}"
+        pattern = r"(?P<sign>[+-]?)\{(?P<expr>[^{}:]+)(?::(?P<fmt>[^{}]+))?\}"
         desc_text = re.sub(pattern, repl, desc_text)
         set_effect = desc_text
         break
     return gear_set, set_effect
 
-def resolve_gear_recipe(gear_id, equip_formula, item_table, language, lang="en"):
+def resolve_gear_recipe(gear_id, equip_formula, equip_formula_chain, item_table, language, lang="en"):
     recipe_parts = []
 
     for formula in equip_formula.values():
-        if formula.get("outcomeEquipId") == gear_id:
-            gold_id = formula.get("costGoldId")
-            gold_num = formula.get("costGoldNum", 0)
-            if gold_id and gold_num > 0:
-                gold_item = item_table.get(gold_id, {})
-                gold_name = language[lang].get(str(gold_item.get("name", {}).get("id")), "")
-                if gold_name:
-                    recipe_parts.append(f"{{{{I|{gold_name}|{gold_num}}}}}")
+        if formula.get("outcomeEquipId") != gear_id:
+            continue
 
-            cost_ids = formula.get("costItemId", [])
-            cost_nums = formula.get("costItemNum", [])
-
-            for item_id, count in zip(cost_ids, cost_nums):
-                item_entry = item_table.get(item_id, {})
-                name_id = str(item_entry.get("name", {}).get("id"))
-                item_name = language[lang].get(name_id, "")
-                if item_name:
-                    recipe_parts.append(f"{{{{I|{item_name}|{count}}}}}")
+        level = formula.get("level", "")
+        chain_entry = equip_formula_chain.get(level, {})
+        chain_list = chain_entry.get("chainList", [])
+        if not chain_list:
             break
+
+        chain = chain_list[0]
+        gold_id = chain.get("costGoldId", "")
+        gold_num = chain.get("costGoldNum", 0)
+        if gold_id and gold_num > 0:
+            gold_item = item_table.get(gold_id, {})
+            gold_name = language[lang].get(str(gold_item.get("name", {}).get("id")), "")
+            if gold_name:
+                recipe_parts.append(f"{{{{I|{gold_name}|{gold_num}}}}}")
+
+        cost_ids = chain.get("costItemId", [])
+        cost_nums = chain.get("costItemNum", [])
+        for item_id, count in zip(cost_ids, cost_nums):
+            item_entry = item_table.get(item_id, {})
+            name_id = str(item_entry.get("name", {}).get("id"))
+            item_name = language[lang].get(name_id, "")
+            if item_name:
+                recipe_parts.append(f"{{{{I|{item_name}|{count}}}}}")
+        break
 
     return " ".join(recipe_parts)
 
