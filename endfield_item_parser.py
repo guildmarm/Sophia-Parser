@@ -33,6 +33,8 @@ SANITY_OUTPUT = os.path.join(const.OUTPUT_DIR, "sanity_page_data.txt")
 CURRENCY_OUTPUT = os.path.join(const.OUTPUT_DIR, "currency_page_data.txt")
 HEADHUNTING_OUTPUT = os.path.join(const.OUTPUT_DIR, "headhunting_page_data.txt")
 MISCELLANEOUS_OUTPUT = os.path.join(const.OUTPUT_DIR, "miscellaneous_page_data.txt")
+PERSONAL_DEVICE_OUTPUT = os.path.join(const.OUTPUT_DIR, "personal_device_page_data.txt")
+ORNAMENTAL_OUTPUT = os.path.join(const.OUTPUT_DIR, "ornamental_page_data.txt")
 os.makedirs(const.OUTPUT_DIR, exist_ok=True)
 
 paths = game_files.build_paths(const.INPUT_DIR)
@@ -79,9 +81,17 @@ class GeneralItemInfo:
                 "xiranite_enr": " (Liquid Heavy Xiranite)",
                 "copper": " (Cuprium Solution)",
                 "copper_enr": " (Hetonite Solution)",
+                "gas_acid": " (Acridgen)",
+                "gas_copper": " (Cuprium Gas)",
+                "gas_copper_enr": " (Hetonite Gas)",
+                "gas_copper_enr2": " (Pyrrolite Gas)",
+                "gas_inert": " (Inergen)",
+                "gas_water": " (Aquagen)",
+                "gas_xiranite": " (Xiragen Gas)",
+                "gas_xiranite_enr": " (Heavy Xiragen Gas)",
             }
             
-            for key, val in suffix_map.items():
+            for key, val in sorted(suffix_map.items(), key=lambda kv: len(kv[0]), reverse=True):
                 if item_id.endswith(key):
                     self.name += val
                     break
@@ -1108,7 +1118,7 @@ with open(SANITY_OUTPUT, "w", encoding="utf-8") as out:
 # Currency
 with open(CURRENCY_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (1, 2, 29, 44, 49, 53, 60, 61, 79, 88, 98) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (1, 2, 3, 29, 44, 49, 53, 60, 61, 79, 81, 88, 98) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -1151,7 +1161,7 @@ with open(CURRENCY_OUTPUT, "w", encoding="utf-8") as out:
 # Headhunting
 with open(HEADHUNTING_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (14, 82, 83) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") not in (14, 82, 83, 93, 94) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -1234,5 +1244,96 @@ with open(MISCELLANEOUS_OUTPUT, "w", encoding="utf-8") as out:
             item_list.ITEM_LIST.append(item_id)
             newly_processed_items.append(item_id)
 
+# Personal Device
+with open(PERSONAL_DEVICE_OUTPUT, "w", encoding="utf-8") as out:
+    for item_id, item_data in item_table.items():
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 101 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+            continue
+
+        info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
+        if info.is_invalid:
+            continue
+
+        out.write(f"""{{{{-start-}}}}
+'''{info.name_clean}'''
+{{{{Item infobox
+|name = {info.name}
+|filename = {info.item_id_output}
+|images = {info.image}
+|cnname = {info.cn}
+|tcname = {info.tc}
+|jpname = {info.jp}
+|krname = {info.kr}
+|spname = {info.sp}
+|runame = {info.ru}
+|type = Personal Device
+|rarity = {info.rarity}}}}}
+'''{info.name}''' is a [[Personal Device|Personal Device]] [[item]] in ''[[Arknights: Endfield]]''.
+
+{{{{Item description|{info.desc}|{info.deco}}}}}
+==Usage==
+
+==Acquisition==
+{info.source}
+{{{{RecipeTable|product={info.name_clean}}}}}
+
+==Navigation==
+{{{{Items}}}}
+[[Category:Personal Device]]
+
+{{{{-stop-}}}}
+
+""")
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
+
+# Ornamentals
+with open(ORNAMENTAL_OUTPUT, "w", encoding="utf-8") as out:
+    for item_id, item_data in item_table.items():
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 111 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+            continue
+
+        info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
+        if info.is_invalid:
+            continue
+
+        out.write(f"""{{{{-start-}}}}
+'''{info.name_clean}'''
+{{{{Item infobox
+|name = {info.name}
+|filename = {info.item_id_output}
+|images = {info.image}
+|cnname = {info.cn}
+|tcname = {info.tc}
+|jpname = {info.jp}
+|krname = {info.kr}
+|spname = {info.sp}
+|runame = {info.ru}
+|type = Personal Device
+|rarity = {info.rarity}}}}}
+'''{info.name}''' is an [[Ornamental|Ornamental]] [[item]] in ''[[Arknights: Endfield]]''.
+
+{{{{Item description|{info.desc}|{info.deco}}}}}
+==Usage==
+
+==Acquisition==
+{info.source}
+
+==Navigation==
+{{{{Items}}}}
+[[Category:Ornamental]]
+
+{{{{-stop-}}}}
+
+""")
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
+
 # Add new items to exclusion list
 item.save_new_items_to_list(newly_processed_items)
+
+# Detect item types not currently handled by this parser
+uncat_items = item.compute_uncategorized_items(item_table, item_list.ITEM_LIST)
+item.save_uncat_items(uncat_items)
