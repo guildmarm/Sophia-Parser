@@ -1,5 +1,5 @@
 from lib.io import load_json
-from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS, BASE_DIR
+from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS, BASE_DIR, ITEM_TYPE_NAME
 from lib.format_text import module_format, efdb_format
 import lib.general as general
 from collections import OrderedDict, defaultdict
@@ -235,6 +235,37 @@ def save_new_items_to_list(new_ids):
             for idx, item_id in enumerate(new_ids):
                 lines.insert(i + 1 + idx, f'    "{item_id}",\n')
             break
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.writelines(lines)
+
+def compute_uncategorized_items(item_table, item_list_ids):
+    uncat = defaultdict(list)
+    item_list_set = set(item_list_ids)
+    for item_id, item_data in item_table.items():
+        item_type = item_data.get("type")
+        if item_type in ITEM_TYPE_NAME or item_id in item_list_set:
+            continue
+        uncat[item_type].append(item_id)
+
+    return dict(sorted(uncat.items(), key=lambda kv: (kv[0] is None, kv[0])))
+
+def save_uncat_items(uncat_dict):
+    file_path = os.path.join(BASE_DIR, "lib", "uncat_items.py")
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    lines = [
+        f"# Auto-generated {today} by lib/helpers/item.py::save_uncat_items\n",
+        "# Item IDs whose type has no entry in ITEM_TYPE_NAME (lib/constants.py),\n",
+        "# grouped by type id. Regenerated on every parser run - do not edit by hand.\n",
+        "UNCAT_ITEMS = {\n",
+    ]
+    for item_type, ids in uncat_dict.items():
+        lines.append(f"    {item_type!r}: [\n")
+        for item_id in sorted(ids):
+            lines.append(f'        "{item_id}",\n')
+        lines.append("    ],\n")
+    lines.append("}\n")
 
     with open(file_path, "w", encoding="utf-8") as f:
         f.writelines(lines)

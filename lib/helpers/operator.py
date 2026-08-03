@@ -329,7 +329,7 @@ def get_operator_potentials(operator_id, char_potential, potential_effect, langu
                 float_value = data.get("skillBbModifier", {}).get("floatValue")
                 if bb_key and float_value is not None:
                     for placeholder in re.findall(r"\{([^}]+)\}", raw_desc):
-                        if re.match(rf"^{re.escape(bb_key)}([+\-*/].*)?(:0|:0\.0|:0\.00|:0%|:0.0%|:0.00%)?$", placeholder):
+                        if re.match(rf"^{re.escape(bb_key)}([+\-*/].*)?(:0(\.[0#]+)?%?)?$", placeholder):
                             expr = placeholder.split(':')[0]
                             expr = expr.replace(bb_key, str(float_value))
                             try:

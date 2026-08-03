@@ -92,4 +92,8 @@ echo "Pushing headhunting data to the wiki..."
 python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/headhunting_page_data.txt" -notitle -summary:"$SUMMARY" -simulate -showdiff
 echo "Pushing miscellaneous data to the wiki..."
 python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/miscellaneous_page_data.txt" -notitle -summary:"$SUMMARY" -simulate -showdiff
+echo "Pushing personal device data to the wiki..."
+python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/personal_device_page_data.txt" -notitle -summary:"$SUMMARY" -simulate -showdiff
+echo "Pushing ornamental data to the wiki..."
+python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/ornamental_page_data.txt" -notitle -summary:"$SUMMARY" -simulate -showdiff
 echo "Upload Complete!"
