@@ -1310,7 +1310,7 @@ with open(ORNAMENTAL_OUTPUT, "w", encoding="utf-8") as out:
 |krname = {info.kr}
 |spname = {info.sp}
 |runame = {info.ru}
-|type = Personal Device
+|type = Ornamental
 |rarity = {info.rarity}}}}}
 '''{info.name}''' is an [[Ornamental|Ornamental]] [[item]] in ''[[Arknights: Endfield]]''.
 
