@@ -492,9 +492,6 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
                         label_key = str(nid)
                         stat_label = text_table.get(label_key, "").strip()
                         if not stat_label: stat_label = f"UNKNOWN_{label_key}"
-                        # Group by position within subDescDataList (stays aligned across
-                        # per-level bundles for the same stat), not by resolved label text —
-                        # two distinct stats can share the same display name.
                         group_key = (condition_id, pos)
                         if group_key not in stat_groups:
                             stat_groups[group_key] = {"label": stat_label, "values": []}
