@@ -484,7 +484,7 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
             bundles = skill_entry.get("SkillPatchDataBundle", [])
             for bundle in bundles:
                 data_list = bundle.get("subDescDataList", []) or []
-                for entry in data_list:
+                for pos, entry in enumerate(data_list):
                     nid = entry.get("name", {}).get("id")
                     value = entry.get("desc", "")
                     condition_id = entry.get("conditionId", "")
@@ -492,9 +492,10 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
                         label_key = str(nid)
                         stat_label = text_table.get(label_key, "").strip()
                         if not stat_label: stat_label = f"UNKNOWN_{label_key}"
-                        group_key = (condition_id, stat_label)
-                        if group_key not in stat_groups: stat_groups[group_key] = []
-                        if value != "": stat_groups[group_key].append(value)
+                        group_key = (condition_id, pos)
+                        if group_key not in stat_groups:
+                            stat_groups[group_key] = {"label": stat_label, "values": []}
+                        if value != "": stat_groups[group_key]["values"].append(value)
         return stat_groups
 
     def extract_cost_or_cooldown(skill_ids, s_key):
@@ -619,10 +620,11 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
 
             stat_groups = extract_skill_stats(skill_ids)
             active_condition = skill.get(f"conditionId{pass_num}", "") if pass_num is not None else None
-            for (condition_id, s_label), vals in stat_groups.items():
+            for (condition_id, _pos), group in stat_groups.items():
                 if active_condition is not None and condition_id and condition_id != active_condition:
                     continue
-                display_label = s_label
+                display_label = group["label"]
+                vals = group["values"]
                 stat_lines.append(f"|stat{idx}= {display_label}, {', '.join(vals)}" if vals else f"|stat{idx}= {display_label}")
                 idx += 1
 
