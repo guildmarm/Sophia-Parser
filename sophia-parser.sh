@@ -12,7 +12,7 @@ echo "STEP 1: Running Sophia-Parser..."
 
 # Parse the data
 echo "Parsing Enemies"
-python3 "$PARSER_DIR/endfield_enemy_parser.py"
+python3 "$PARSER_DIR/endfield_enemy_parser.py" -force -summary="$SUMMARY"
 echo "Parsing Gear"
 python3 "$PARSER_DIR/endfield_gear_parser.py"
 echo "Parsing Items"
@@ -20,7 +20,7 @@ python3 "$PARSER_DIR/endfield_item_parser.py"
 echo "Parsing Operators"
 python3 "$PARSER_DIR/endfield_operator_parser.py"
 echo "Parsing Weapons"
-python3 "$PARSER_DIR/endfield_weapon_parser.py"
+python3 "$PARSER_DIR/endfield_weapon_parser.py" -force -summary="$SUMMARY"
 echo "Parse Complete!"
 echo "Sleeping for 20 seconds to help prevent rate limit"
 sleep 20
@@ -33,16 +33,8 @@ sleep 2
 
 echo "STEP 3: Push Files To Endfield Wiki..."
 # Core
-echo "Pushing enemy data to the wiki..."
-python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/full_enemy_page_data.txt" -force -notitle -summary:"$SUMMARY"
 echo "Pushing gear data to the wiki..."
 python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/full_gear_page_data.txt" -force -notitle -summary:"$SUMMARY"
-python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/gear_image_icon_data.txt" -force -notitle -summary:"$SUMMARY"
-python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/template_gear_set_data.txt" -force -notitle -summary:"$SUMMARY"
-#python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/template_gear_nav_data.txt" -force -notitle -summary:"$SUMMARY"
-echo "Pushing weapon data to the wiki..."
-python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/full_weapon_page_data.txt" -force -notitle -summary:"$SUMMARY"
-python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/module_weapon_skill_data.txt" -force -notitle -summary:"$SUMMARY"
 echo "Pushing operator data to the wiki..."
 python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/full_operator_page_data.txt" -force -notitle -summary:"$SUMMARY"
 

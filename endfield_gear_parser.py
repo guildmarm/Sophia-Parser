@@ -5,13 +5,21 @@ import lib.game_files as game_files
 import lib.constants as const
 import lib.format_text as format_text
 import os
+from argparse import ArgumentParser
+from mwcleric.auth_credentials import AuthCredentials
+from mwcleric.wikigg_client import WikiggClient
+from mwcleric.page_modifier import PageModifierBase
 
-# Output file
-GEAR_PAGE_OUTPUT = os.path.join(const.OUTPUT_DIR, "full_gear_page_data.txt")
-GEAR_SET_TEMPLATE_OUTPUT = os.path.join(const.OUTPUT_DIR, "template_gear_set_data.txt")
-GEAR_NAV_TEMPLATE_OUTPUT = os.path.join(const.OUTPUT_DIR, "template_gear_nav_data.txt")
-GEAR_IMAGE_ICON_OUTPUT = os.path.join(const.OUTPUT_DIR, "gear_image_icon_data.txt")
-os.makedirs(const.OUTPUT_DIR, exist_ok=True)
+parser = ArgumentParser(prog="endfield_gear_parser")
+parser.add_argument("-force", action="store_true", help="Overwrite the existing page")
+parser.add_argument("-summary", help="The text used as an edit summary for the upload. If the page exists, standard messages for prepending, appending, or replacement are appended after it")
+args = parser.parse_args()
+
+auth = AuthCredentials(user_file="bot")
+site = WikiggClient("endfield", credentials=auth)
+lag = 10
+force = args.force
+summary = args.summary
 
 paths = game_files.build_paths(const.INPUT_DIR)
 
@@ -33,59 +41,60 @@ gear_set_lines = gear.build_gear_set_lines(equip_table, item_table, equip_suit, 
 # Gear nav lines
 gear_armor, gear_glove, gear_kit = gear.build_gear_nav_lists(equip_table, item_table, language)
 
+
 # Make that sausage
-with open(GEAR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
-    for gear_id, gear_data in equip_table.items():
-        item_data = item_table.get(gear_id)
-        if not item_data:
-            continue
+wikitexts = {}
+for gear_id, gear_data in equip_table.items():
+    item_data = item_table.get(gear_id)
+    if not item_data:
+        continue
 
-        # Gear formula source
-        source_text = gear.resolve_gear_sources_from_formula(gear_id, equip_formula, item_table, system_jump_table, language)
+    # Gear formula source
+    source_text = gear.resolve_gear_sources_from_formula(gear_id, equip_formula, item_table, system_jump_table, language)
 
-        # Gear names
-        name_id = item_data.get("name", {}).get("id")
-        gear_name = general.resolve_text(language["en"], name_id)
-        gear_name_clean = general.sanitize_name(gear_name)
-        gear_name_image = general.sanitize_image_name(gear_name)
-        cn_name = general.resolve_text(language["cn"], name_id)
-        tc_name = general.resolve_text(language["tc"], name_id)
-        jp_name = general.resolve_text(language["jp"], name_id)
-        kr_name = general.resolve_text(language["kr"], name_id)
-        sp_name = general.resolve_text(language["sp"], name_id)
-        ru_name = general.resolve_text(language["ru"], name_id)
+    # Gear names
+    name_id = item_data.get("name", {}).get("id")
+    gear_name = general.resolve_text(language["en"], name_id)
+    gear_name_clean = general.sanitize_name(gear_name)
+    gear_name_image = general.sanitize_image_name(gear_name)
+    cn_name = general.resolve_text(language["cn"], name_id)
+    tc_name = general.resolve_text(language["tc"], name_id)
+    jp_name = general.resolve_text(language["jp"], name_id)
+    kr_name = general.resolve_text(language["kr"], name_id)
+    sp_name = general.resolve_text(language["sp"], name_id)
+    ru_name = general.resolve_text(language["ru"], name_id)
 
-        # Descriptions
-        desc = general.resolve_text(language["en"], item_data.get("desc", {}).get("id"))
-        deco_desc = general.resolve_text(language["en"], item_data.get("decoDesc", {}).get("id"))
+    # Descriptions
+    desc = general.resolve_text(language["en"], item_data.get("desc", {}).get("id"))
+    deco_desc = general.resolve_text(language["en"], item_data.get("decoDesc", {}).get("id"))
 
-        # Gear type and rarity
-        gear_type = gear.get_gear_part_type(gear_data)
-        rarity = item_data.get("rarity", "")
+    # Gear type and rarity
+    gear_type = gear.get_gear_part_type(gear_data)
+    rarity = item_data.get("rarity", "")
 
-        # Gear level and region
-        gear_level = gear_data.get("minWearLv", "")
-        gear_region = gear.get_gear_region(gear_data)
+    # Gear level and region
+    gear_level = gear_data.get("minWearLv", "")
+    gear_region = gear.get_gear_region(gear_data)
 
-        # Gear set and effect
-        gear_set, set_effect = gear.resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language)
-        set_effect_formatted = format_text.efdb_format(set_effect)
-        gear_setname = f"{gear_set}" if gear_set else ""
-        gear_set_template = f"{{{{Gear Set|{gear_set}}}}}" if gear_set else ""
-        gear_set_section = f"==Set Items==" if gear_set else ""
+    # Gear set and effect
+    gear_set, set_effect = gear.resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language)
+    set_effect_formatted = format_text.efdb_format(set_effect)
+    gear_setname = f"{gear_set}" if gear_set else ""
+    gear_set_template = f"{{{{Gear Set|{gear_set}}}}}" if gear_set else ""
+    gear_set_section = f"==Set Items==" if gear_set else ""
 
-        # Gear base and artificed stats
-        (gear_def, gear_pstat, gear_pvalue, p_enhanced, gear_sstat, gear_svalue, s_enhanced, gear_tstat, gear_tvalue, t_enhanced) = gear.resolve_gear_attributes_sections(gear_data, attribute_filter, language)
-        gear_artifice = gear.resolve_artifice_bool(p_enhanced, s_enhanced, t_enhanced)
-        gear_def = gear.format_stat_value(gear_def, gear_artifice)
-        gear_pvalue = gear.format_stat_value(gear_pvalue, gear_artifice)
-        gear_svalue = gear.format_stat_value(gear_svalue, gear_artifice)
-        gear_tvalue = gear.format_stat_value(gear_tvalue, gear_artifice)
+    # Gear base and artificed stats
+    (gear_def, gear_pstat, gear_pvalue, p_enhanced, gear_sstat, gear_svalue, s_enhanced, gear_tstat, gear_tvalue, t_enhanced) = gear.resolve_gear_attributes_sections(gear_data, attribute_filter, language)
+    gear_artifice = gear.resolve_artifice_bool(p_enhanced, s_enhanced, t_enhanced)
+    gear_def = gear.format_stat_value(gear_def, gear_artifice)
+    gear_pvalue = gear.format_stat_value(gear_pvalue, gear_artifice)
+    gear_svalue = gear.format_stat_value(gear_svalue, gear_artifice)
+    gear_tvalue = gear.format_stat_value(gear_tvalue, gear_artifice)
 
-        # Gear recipe
-        gear_recipe = gear.resolve_gear_recipe(gear_id, equip_formula, equip_formula_chain, item_table, language)
+    # Gear recipe
+    gear_recipe = gear.resolve_gear_recipe(gear_id, equip_formula, equip_formula_chain, item_table, language)
 
-        out.write(f"""{{{{-start-}}}}
+    wikitext = (f"""{{{{-start-}}}}
 '''{gear_name_clean}'''
 {{{{Gear infobox
 |name = {gear_name}
@@ -129,32 +138,33 @@ with open(GEAR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+    wikitexts[gear_name_clean] = wikitext
 
-# Push icon redirects
-with open(GEAR_IMAGE_ICON_OUTPUT, "w", encoding="utf-8") as out:
-    for gear_id, gear_data in equip_table.items():
-        item_data = item_table.get(gear_id)
-        if not item_data:
-            continue
+remaining_pagenames = set(wikitexts.keys())
+processed_pagenames = set()
 
-        # Gear names
-        name_id = item_data.get("name", {}).get("id")
-        gear_name = general.resolve_text(language["en"], name_id)
-        gear_name_clean = general.sanitize_name(gear_name)
-        gear_name_image = general.sanitize_image_name(gear_name)
-        
-        out.write(f"""{{{{-start-}}}}
-'''File:{gear_name_clean}_icon.png'''
-#REDIRECT [[File:{gear_name_image}.png]]
+page_list = site.pages_using("Gear infobox", namespace=0)
+class GearPage(PageModifierBase):
+    def update_plaintext(self, text):
+        pagename = self.current_page.name
+        wikitext = wikitexts.get(pagename)
+        if wikitext:
+            processed_pagenames.add(pagename)
+            remaining_pagenames.discard(pagename)
+            text = wikitext
+        return text
 
-{{{{-stop-}}}}
-
-""")
-
+if not force:
+    pagenames = {page.name for page in page_list}
+    processed_pagenames += pagenames
+    remaining_pagenames -= pagenames
+GearPage(site, page_list=page_list, skip_pages=processed_pagenames, lag=lag, summary=summary).run()
+if remaining_pagenames:
+    GearPage(site, title_list=sorted(remaining_pagenames), lag=lag, summary=summary).run()
 # Make that sausage AGAIN (This is for the Gear Set template)
-with open(GEAR_SET_TEMPLATE_OUTPUT, "w", encoding="utf-8") as out:
-        out.write(f"""{{{{-start-}}}}
-'''Template:Gear Set'''
+class GearSetTemplate(PageModifierBase):
+     def update_plaintext(self, text):
+        text = (f"""\
 <includeonly>
 {{| width="100%" class="wikitable" cellpadding="5" style="margin-top:0; font-size:16px; border-style: hidden;"
 ! style="background-color:#2a2a2a; border-bottom: hidden; padding: 5px;" | [[{{{{{{1}}}}}}]] Set Items
@@ -163,33 +173,7 @@ with open(GEAR_SET_TEMPLATE_OUTPUT, "w", encoding="utf-8") as out:
 {gear_set_lines}
 }}}}</div>
 |}}</includeonly><noinclude>{{{{Documentation}}}}[[Category:Table templates]]</noinclude>
-{{{{-stop-}}}}
 """)
+        return text
 
-# Make that sausage YET AGAIN (This is for the Gear Nav template)
-with open(GEAR_NAV_TEMPLATE_OUTPUT, "w", encoding="utf-8") as out:
-        out.write(f"""{{{{-start-}}}}
-'''Template:Gears'''
-<onlyinclude>{{{{Navbox
-| Title = Gear
-| State = {{{{{{state|collapsed}}}}}}
-| Group style = padding:5px; vertical-align:middle; text-align:center; font-size:14px;
-| Subgroup style = padding:5px; vertical-align:middle; text-align:left; font-size:14px;
-| List style = vertical-align:middle; font-size:12px;
-| Group 1 = [[File:Armor Gear Icon.png|36px|link=]]<br>Armor
-| List 1 = {gear_armor}
-
-| Group 2 = [[File:Glove Gear Icon.png|36px|link=]]<br>Gloves
-| List 2 = {gear_glove}
-
-| Group 3 = [[File:Kit Gear Icon.png|36px|link=]]<br>Kit
-| List 3 = {gear_kit}
-
-}}}}</onlyinclude><noinclude>This navbox template is used as a means to navigate a list of [[gears]].
-
-To use this template, add <code><nowiki>{{{{Gears}}}}</nowiki></code> at the end of an article.
-
-[[Category:Navboxes]]</noinclude>
-
-{{{{-stop-}}}}
-""")
+GearSetTemplate(site, title_list=["Template:Gear Set"], lag=lag, summary=summary).run()

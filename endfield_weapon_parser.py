@@ -4,11 +4,21 @@ import lib.helpers.weapon as weapon
 import lib.game_files as game_files
 import lib.constants as const
 import os
+from argparse import ArgumentParser
+from mwcleric.auth_credentials import AuthCredentials
+from mwcleric.wikigg_client import WikiggClient
+from mwcleric.page_modifier import PageModifierBase
 
-# Output file
-WEAPON_PAGE_OUTPUT = os.path.join(const.OUTPUT_DIR, "full_weapon_page_data.txt")
-WEAPON_SKILL_MODULE_OUTPUT = os.path.join(const.OUTPUT_DIR, "module_weapon_skill_data.txt")
-os.makedirs(const.OUTPUT_DIR, exist_ok=True)
+parser = ArgumentParser(prog="endfield_weapon_parser")
+parser.add_argument("-force", action="store_true", help="Overwrite the existing page")
+parser.add_argument("-summary", help="The text used as an edit summary for the upload. If the page exists, standard messages for prepending, appending, or replacement are appended after it")
+args = parser.parse_args()
+
+auth = AuthCredentials(user_file="bot")
+site = WikiggClient("endfield", credentials=auth)
+lag = 10
+force = args.force
+summary = args.summary
 
 paths = game_files.build_paths(const.INPUT_DIR)
 
@@ -40,59 +50,57 @@ for sid in sorted(all_skill_ids):
 skill_lines.sort(key=lambda x: x.split('"]')[0].strip('["'))
 weapon_skill_data = ",\n    ".join(skill_lines)
 
-# Make that sausage
-with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
-    for weapon_id, weapon_data in weapon_basic.items():
-        item_data = item_table.get(weapon_id)
-        if not item_data:
-            continue
+wikitexts = {}
+for weapon_id, weapon_data in weapon_basic.items():
+    item_data = item_table.get(weapon_id)
+    if not item_data:
+        continue
 
-        source_ids = item_data.get("obtainWayIds", [])
-        source_text = general.resolve_sources(source_ids, system_jump_table, language)
-        
-        # Weapon names
-        name_id = item_data.get("name", {}).get("id")
-        weapon_name = general.resolve_text(language["en"], name_id)
-        weapon_name_clean = general.sanitize_name(weapon_name)
-        weapon_name_image = general.sanitize_image_name(weapon_name)
-        cn_name = general.resolve_text(language["cn"], name_id)
-        tc_name = general.resolve_text(language["tc"], name_id)
-        jp_name = general.resolve_text(language["jp"], name_id)
-        kr_name = general.resolve_text(language["kr"], name_id)
-        sp_name = general.resolve_text(language["sp"], name_id)
-        ru_name = general.resolve_text(language["ru"], name_id)
+    source_ids = item_data.get("obtainWayIds", [])
+    source_text = general.resolve_sources(source_ids, system_jump_table, language)
+    
+    # Weapon names
+    name_id = item_data.get("name", {}).get("id")
+    weapon_name = general.resolve_text(language["en"], name_id)
+    weapon_name_clean = general.sanitize_name(weapon_name)
+    weapon_name_image = general.sanitize_image_name(weapon_name)
+    cn_name = general.resolve_text(language["cn"], name_id)
+    tc_name = general.resolve_text(language["tc"], name_id)
+    jp_name = general.resolve_text(language["jp"], name_id)
+    kr_name = general.resolve_text(language["kr"], name_id)
+    sp_name = general.resolve_text(language["sp"], name_id)
+    ru_name = general.resolve_text(language["ru"], name_id)
 
-        # Weapon descriptions. desc and decoDesc are the tooltip flavor text. weaponDesc is the Basic Info section.
-        desc = general.resolve_text(language["en"], item_data.get("desc", {}).get("id"))
-        deco_desc = general.resolve_text(language["en"], item_data.get("decoDesc", {}).get("id"))
-        weapon_desc = general.resolve_text(language["en"], weapon_data.get("weaponDesc", {}).get("id")) or ""
-        weapon_desc = weapon_desc.replace("\n", "<br>")
+    # Weapon descriptions. desc and decoDesc are the tooltip flavor text. weaponDesc is the Basic Info section.
+    desc = general.resolve_text(language["en"], item_data.get("desc", {}).get("id"))
+    deco_desc = general.resolve_text(language["en"], item_data.get("decoDesc", {}).get("id"))
+    weapon_desc = general.resolve_text(language["en"], weapon_data.get("weaponDesc", {}).get("id")) or ""
+    weapon_desc = weapon_desc.replace("\n", "<br>")
 
-        # Weapon type and rarity
-        weapon_type = weapon.get_weapon_type(weapon_id)
-        rarity = weapon_data.get("rarity", "")
+    # Weapon type and rarity
+    weapon_type = const.WEAPON_TYPE.get(weapon_data.get("weaponType", 0), "Unknown")
+    rarity = weapon_data.get("rarity", "")
 
-        # Weapon skills
-        weapon_skill_ids = weapon_data.get("weaponSkillList", [])
-        resolved_skills = [weapon.resolve_skill_name(sid, skill_patch, language) for sid in weapon_skill_ids if sid]
+    # Weapon skills
+    weapon_skill_ids = weapon_data.get("weaponSkillList", [])
+    resolved_skills = [weapon.resolve_skill_name(sid, skill_patch, language) for sid in weapon_skill_ids if sid]
 
-        weapon_potential_id = weapon_data.get("weaponPotentialSkill", "")
-        resolved_potential = weapon.resolve_skill_name(weapon_potential_id, skill_patch, language)
+    weapon_potential_id = weapon_data.get("weaponPotentialSkill", "")
+    resolved_potential = weapon.resolve_skill_name(weapon_potential_id, skill_patch, language)
 
-        # Tuning items
-        break_items = weapon.resolve_tuning_items(weapon_id, weapon_basic, breakthrough_table, item_table, language)
-        t_values = ["", "", "", ""]
-        for i in range(min(4, len(break_items))):
-            t_values[i] = break_items[i]
+    # Tuning items
+    break_items = weapon.resolve_tuning_items(weapon_id, weapon_basic, breakthrough_table, item_table, language)
+    t_values = ["", "", "", ""]
+    for i in range(min(4, len(break_items))):
+        t_values[i] = break_items[i]
 
-        # Base atk
-        level_template_id = weapon_data.get("levelTemplateId")
-        batk_values = weapon.get_batk_values(level_template_id, weapon_upgrade_table)
-        batk_str = ", ".join(batk_values)
+    # Base atk
+    level_template_id = weapon_data.get("levelTemplateId")
+    batk_values = weapon.get_batk_values(level_template_id, weapon_upgrade_table)
+    batk_str = ", ".join(batk_values)
 
-        # Output
-        out.write(f"""{{{{-start-}}}}
-'''{weapon_name_clean}'''
+    # Output
+    output = (f"""\
 {{{{Weapon infobox
 |icon = {weapon_type}
 |name = {weapon_name}
@@ -137,15 +145,27 @@ with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
 [[Category:Weapons]]
 [[Category:{weapon_type}s]]
-
-{{{{-stop-}}}}
-
 """)
+    wikitexts[weapon_name_clean] = output
 
-# Make that sausage AGAIN (This is for the Weapon Skill data module)
-with open(WEAPON_SKILL_MODULE_OUTPUT, "w", encoding="utf-8") as out:
-        out.write(f"""{{{{-start-}}}}
-'''Module:Weapon skill/data'''
+remaining_pagenames = set(wikitexts.keys())
+processed_pagenames = set()
+
+page_list = site.pages_using("Weapon infobox", namespace=0)
+
+class WeaponPage(PageModifierBase):
+    def update_plaintext(self, text):
+        pagename = self.current_page.name
+        wikitext = wikitexts.get(pagename)
+        if wikitext:
+            processed_pagenames.add(pagename)
+            remaining_pagenames.discard(pagename)
+            text = wikitext
+        return text
+
+class WeaponSkillModulePage(PageModifierBase):
+    def update_plaintext(self, text):
+        text = (f"""\
 local data={{
     {weapon_skill_data}
 }}
@@ -167,7 +187,19 @@ for _, v in pairs(data) do
 end
 
 return data
-
-{{{{-stop-}}}}
-
 """)
+        return text
+
+# Make that sausage
+if not force:
+    # If page already exists, skip it
+    pagenames = {page.name for page in page_list}
+    processed_pagenames += pagenames
+    remaining_pagenames -= pagenames
+WeaponPage(site, page_list=page_list, skip_pages=processed_pagenames, lag=lag, summary=summary).run()
+if remaining_pagenames: # Handle new weapons
+    WeaponPage(site, title_list=sorted(remaining_pagenames), lag=lag, summary=summary).run()    
+
+# Make that sausage AGAIN (This is for the Weapon Skill data module)
+if force:
+    WeaponSkillModulePage(site, title_list=["Module:Weapon skill/data"], lag=lag, summary=summary).run()
