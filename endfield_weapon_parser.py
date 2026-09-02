@@ -3,7 +3,13 @@ import lib.general as general
 import lib.helpers.weapon as weapon
 import lib.game_files as game_files
 import lib.constants as const
+import time
 import os
+import mwparserfromhell
+from mwcleric.wiki_client import WikiClient
+
+# Set endfield wiki as mw.cleric site
+site = WikiClient("endfield.wiki.gg")
 
 # Output file
 WEAPON_PAGE_OUTPUT = os.path.join(const.OUTPUT_DIR, "full_weapon_page_data.txt")
@@ -90,6 +96,17 @@ with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         batk_values = weapon.get_batk_values(level_template_id, weapon_upgrade_table)
         batk_str = ", ".join(batk_values)
 
+        # mw.cleric input
+        wiki_hatnote = ""
+        page = site.client.pages[weapon_name_clean]
+        if page.exists:
+            wikitext = page.text()
+            parsed_code = mwparserfromhell.parse(wikitext)
+            for template in parsed_code.filter_templates():
+                if template.name.matches("Hatnote"):
+                    wiki_hatnote = str(template) + "\n"
+                    break
+
         # Output
         out.write(f"""{{{{-start-}}}}
 '''{weapon_name_clean}'''
@@ -110,7 +127,7 @@ with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |runame = {ru_name}
 |type = {weapon_type}
 |source = {source_text}}}}}
-'''{weapon_name}''' is a {rarity}★ [[{weapon_type}]] in ''[[Arknights: Endfield]]''.
+{wiki_hatnote}'''{weapon_name}''' is a {rarity}★ [[{weapon_type}]] in ''[[Arknights: Endfield]]''.
 
 {{{{Item description|{desc}|{deco_desc}}}}}
 
@@ -141,6 +158,8 @@ with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-stop-}}}}
 
 """)
+        # Short sleep between parses so there's no error with timeouts on the wiki API
+        time.sleep(2)
 
 # Make that sausage AGAIN (This is for the Weapon Skill data module)
 with open(WEAPON_SKILL_MODULE_OUTPUT, "w", encoding="utf-8") as out:

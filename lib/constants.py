@@ -332,7 +332,7 @@ DIALOGUE_TYPE = {
     "Added to Team 2": 4,
     "Switching Weapon": 5,
     "Switching Gear": 6,
-    "Ability Matrix Activation": 7,
+    "Talent Node Activation": 7,
     "Watching Combat Records": 8,
     "Operator Promotion 1": 9,
     "Operator Promotion 2": 10,

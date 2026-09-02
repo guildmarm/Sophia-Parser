@@ -458,6 +458,7 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
         return text.replace(label, f"<b>{label}</b>")
 
     def resolve_blackboard_placeholders(text, skill_ids):
+        resolved = {}
         for s_id in skill_ids:
             skill_entry = skill_patch.get(s_id)
             if not skill_entry: continue
@@ -466,14 +467,17 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
                 blackboard = bundle.get("blackboard", [])
                 for entry in blackboard:
                     key, val = entry.get("key"), entry.get("value")
-                    if key and val is not None:
-                        text = text.replace(f"{{{key}:0}}", str(val).replace(".0", ""))
-                        text = text.replace(f"{{{key}:0.0}}", f"{val:.1f}")
-                        text = text.replace(f"{{{key}:0.00}}", f"{val:.2f}")
-                        val_pct = val * 100
-                        text = text.replace(f"{{{key}:0%}}", f"{val_pct:g}%")
-                        text = text.replace(f"{{{key}:0.0%}}", f"{val_pct:.1f}%")
-                        text = text.replace(f"{{{key}:0.00%}}", f"{val_pct:.2f}%")
+                    if key and val is not None and (key not in resolved or resolved[key] == 0):
+                        resolved[key] = val
+
+        for key, val in resolved.items():
+            text = text.replace(f"{{{key}:0}}", str(val).replace(".0", ""))
+            text = text.replace(f"{{{key}:0.0}}", f"{val:.1f}")
+            text = text.replace(f"{{{key}:0.00}}", f"{val:.2f}")
+            val_pct = val * 100
+            text = text.replace(f"{{{key}:0%}}", f"{val_pct:g}%")
+            text = text.replace(f"{{{key}:0.0%}}", f"{val_pct:.1f}%")
+            text = text.replace(f"{{{key}:0.00%}}", f"{val_pct:.2f}%")
         return text
 
     def extract_skill_stats(skill_ids):
@@ -492,7 +496,7 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
                         label_key = str(nid)
                         stat_label = text_table.get(label_key, "").strip()
                         if not stat_label: stat_label = f"UNKNOWN_{label_key}"
-                        group_key = (condition_id, pos)
+                        group_key = (condition_id, s_id, pos)
                         if group_key not in stat_groups:
                             stat_groups[group_key] = {"label": stat_label, "values": []}
                         if value != "": stat_groups[group_key]["values"].append(value)
@@ -620,7 +624,7 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
 
             stat_groups = extract_skill_stats(skill_ids)
             active_condition = skill.get(f"conditionId{pass_num}", "") if pass_num is not None else None
-            for (condition_id, _pos), group in stat_groups.items():
+            for (condition_id, _s_id, _pos), group in stat_groups.items():
                 if active_condition is not None and condition_id and condition_id != active_condition:
                     continue
                 display_label = group["label"]
@@ -743,6 +747,7 @@ def main_attribute_talent(operator_id, char_growth, language, mainAttr, wiki_tal
     talent_map = cdata.get("talentNodeMap", {})
     suffixes = ["1", "3", "5", "7"]
     talent_name = ""
+    talent_icon = mainAttr
     conds = ["", "", "", ""]
     descs = ["", "", "", ""]
 
@@ -756,7 +761,14 @@ def main_attribute_talent(operator_id, char_growth, language, mainAttr, wiki_tal
                 if title_id != "0":
                     full_name = text_table.get(title_id, "").strip()
                     talent_name = re.split(r'\s+[IVX]+$', full_name)[0]
-            
+
+            if talent_icon == mainAttr:
+                for mod in attr_info.get("attributeModifiers", []):
+                    name = ATTRIBUTE_TYPE.get(mod.get("attrType"))
+                    if name and name != mainAttr:
+                        talent_icon = f"{mainAttr} {name}"
+                        break
+
             break_stage = attr_info.get("breakStage", 0)
             conds[i] = f"Elite {break_stage}"
             desc_id = str(attr_info.get("desc", {}).get("id", "0"))
@@ -765,7 +777,7 @@ def main_attribute_talent(operator_id, char_growth, language, mainAttr, wiki_tal
 
     return f"""{{{{Operator talent
 |name = {talent_name}
-|icon = {mainAttr}
+|icon = {talent_icon}
 |info = {wiki_talents.get(talent_name, "")}
 |cond1 = {conds[0]}
 |desc1 = {descs[0]}
@@ -1017,10 +1029,18 @@ def operator_talent_costs(operator_id, char_growth, item_table, language, mainAt
     talent_map = cdata.get("talentNodeMap", {})
     break_map = cdata.get("charBreakCostMap", {})
 
+    talent_icon = mainAttr
     for suffix in ["1", "3", "5", "7"]:
         node = talent_map.get(f"{operator_id}_{suffix}")
         if node:
-            stage = node.get("attributeNodeInfo", {}).get("breakStage", 0)
+            attr_info = node.get("attributeNodeInfo", {})
+            if talent_icon == mainAttr:
+                for mod in attr_info.get("attributeModifiers", []):
+                    name = ATTRIBUTE_TYPE.get(mod.get("attrType"))
+                    if name and name != mainAttr:
+                        talent_icon = f"{mainAttr} {name}"
+                        break
+            stage = attr_info.get("breakStage", 0)
             if 1 <= stage <= 4:
                 cost_str = format_node_costs(node)
                 if cost_str:
@@ -1059,7 +1079,7 @@ def operator_talent_costs(operator_id, char_growth, item_table, language, mainAt
 
     return f"""{{{{Operator talent cost
 |type = Talent
-|attr = {mainAttr}
+|attr = {talent_icon}
 |acost = {finalize_row(tcost1_slots)}
 |tcost1 = {finalize_row(tcost2_slots)}
 |tcost2 = {finalize_row(tcost3_slots)}

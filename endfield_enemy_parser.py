@@ -80,7 +80,10 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         wiki_overview = ""
         wiki_addition = ""
         wiki_changelog = ""
+        wiki_trivia = ""
+        wiki_references = ""
         wiki_enemy_tab = ""
+        wiki_params = {p: "" for p in ['attack', 'damage', 'base', 'upgrade']}
 
         page = site.client.pages[enemy_name_clean]
         if page.exists:
@@ -89,10 +92,15 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
             wiki_overview = get_wiki_section(wikitext, "Overview")
             wiki_addition = get_wiki_section(wikitext, "See Also")
             wiki_changelog = get_wiki_section(wikitext, "Changelog")
+            wiki_trivia = get_wiki_section(wikitext, "Trivia")
+            wiki_references = get_wiki_section(wikitext, "References")
             for template in parsed_code.filter_templates():
+                if template.name.matches("Enemy infobox"):
+                    for p in wiki_params.keys():
+                        if template.has(p):
+                            wiki_params[p] = str(template.get(p).value).strip()
                 if template.name.matches("Enemy tab"):
                     wiki_enemy_tab = "{{Enemy tab}}\n"
-                    break
 
         # Enemy description
         desc_id = display_data.get("description", {}).get("id")
@@ -123,6 +131,12 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         # Level independent stats
         enemy_weight, enemy_attack_range, enemy_stagger_hp, enemy_stagger_time, enemy_stagger_damage, physical_resist, nature_resist, cryo_resist, electric_resist, heat_resist, aether_resist, enemy_sp_gain = enemy.resolve_enemy_independent_stats(attr_data)
 
+        optional_sections = ""
+        if wiki_trivia:
+            optional_sections += f"==Trivia==\n{wiki_trivia}\n\n"
+        if wiki_references:
+            optional_sections += f"==References==\n{wiki_references}\n\n"
+
         # Output
         out.write(f"""{{{{-start-}}}}
 '''{enemy_name_clean}'''
@@ -138,9 +152,10 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |runame = {ru_name}
 |type = {enemy_species}
 |class = {enemy_class}
-|attack = 
-|damage = 
-|upgrade = }}}}
+|attack = {wiki_params['attack']}
+|damage = {wiki_params['damage']}
+|base = {wiki_params['base']}
+|upgrade = {wiki_params['upgrade']}}}}}
 '''{enemy_name}''' is {enemy_article} [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]''.{enemy_alternate_text}
 
 {{{{Enemy description|{enemy_desc}}}}}
@@ -176,7 +191,7 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 ==Changelog==
 {wiki_changelog}
 
-==Navigation==
+{optional_sections}==Navigation==
 {{{{Enemies}}}}
 [[Category:{enemy_class} enemies]]
 

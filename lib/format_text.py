@@ -75,6 +75,8 @@ BA_CRYSTBREAK = re.compile(r"<#ba\.crystbreak>(.*?)</>")
 BA_SPEEDUP = re.compile(r"<#ba\.speedup>(.*?)</>")
 BA_ROSSI = re.compile(r"<#ba\.rossi>(.*?)</>")
 BA_ABSORB = re.compile(r"<#ba\.absorb>(.*?)</>")
+BA_ARROWNUM = re.compile(r"<#ba\.arrownum>(.*?)</>")
+BA_ARROWENERGY = re.compile(r"<#ba\.arrowenergy>(.*?)</>")
 
 def efdb_format(text: str) -> str:
     if not text:
@@ -159,6 +161,8 @@ def efdb_format(text: str) -> str:
     text = BA_SPEEDUP.sub(r"{{G|Haste|\1}}", text)
     text = BA_ROSSI.sub(r"{{G|Razor Clawmark|\1}}", text)
     text = BA_ABSORB.sub(r"{{G|Absorb|\1}}", text)
+    text = BA_ARROWNUM.sub(r"{{G|Arrows|\1}}", text)
+    text = BA_ARROWENERGY.sub(r"{{G|Sign|\1}}", text)
 
     return text
 
