@@ -133,13 +133,14 @@ with open(EMPLOYMENT_CONTRACT_OUTPUT, "w", encoding="utf-8") as out:
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
+        contract_image = info.image.replace(".png", " (Employment Contract).png")
 
         out.write(f"""{{{{-start-}}}}
 '''{info.name_clean} (Employment Contract)'''
 {{{{Item infobox
 |name = {info.name} (Employment Contract)
 |filename = {info.item_id_output}
-|images = {info.image}
+|images = {contract_image}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}

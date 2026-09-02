@@ -73,7 +73,7 @@ def resolve_enemy_locations(display_data, distribution_info, language, lang="en"
         area_name_id = dist_data.get("areaName", {}).get("id")
         area_name = general.resolve_text(language[lang], area_name_id)
         if area_name:
-            enemy_location_list.append(f"*{area_name}")
+            enemy_location_list.append(f"*[[{area_name}]]")
 
     if not enemy_location_list:
         enemy_location_list.append("*TBA")
@@ -147,12 +147,19 @@ def resolve_enemy_independent_stats(attr_data):
     enemy_stagger_time = independent_stats.get(21, "")
     enemy_stagger_damage = independent_stats.get(27, "")
 
-    physical_resist = independent_stats.get(80, "")
-    nature_resist = independent_stats.get(81, "")
-    cryo_resist = independent_stats.get(82, "")
-    electric_resist = independent_stats.get(83, "")
-    heat_resist = independent_stats.get(84, "")
-    aether_resist = independent_stats.get(85, "")
+    def resolve_resist(base_type, offset_type):
+        base = independent_stats.get(base_type, 1)
+        if base != 1:
+            return base
+        offset = independent_stats.get(offset_type, 0)
+        return f"{round(1 - offset / 100, 4):g}"
+
+    physical_resist = resolve_resist(80, 94)
+    nature_resist = resolve_resist(81, 95)
+    cryo_resist = resolve_resist(82, 96)
+    electric_resist = resolve_resist(83, 97)
+    heat_resist = resolve_resist(84, 98)
+    aether_resist = resolve_resist(85, 99)
 
     enemy_sp_gain = attr_data.get("breakingAttackedAtbObtain", "")
 
