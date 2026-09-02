@@ -161,7 +161,7 @@ def efdb_format(text: str) -> str:
     text = BA_SPEEDUP.sub(r"{{G|Haste|\1}}", text)
     text = BA_ROSSI.sub(r"{{G|Razor Clawmark|\1}}", text)
     text = BA_ABSORB.sub(r"{{G|Absorb|\1}}", text)
-    text = BA_ARROWNUM.sub(r"{{G|Arrows|\1}}", text)
+    text = BA_ARROWNUM.sub(r"{{G|Hunting Arrow|\1}}", text)
     text = BA_ARROWENERGY.sub(r"{{G|Sign|\1}}", text)
 
     return text
@@ -230,6 +230,8 @@ def module_format(text: str) -> str:
     text = BA_SPEEDUP.sub(r"{{G|Haste|\1}}", text)
     text = BA_ROSSI.sub(r"{{G|Razor Clawmark|\1}}", text)
     text = BA_ABSORB.sub(r"{{G|Absorb|\1}}", text)
+    text = BA_ARROWNUM.sub(r"{{G|Hunting Arrow|\1}}", text)
+    text = BA_ARROWENERGY.sub(r"{{G|Sign|\1}}", text)
 
     # Text that uses the <span> template
     text = BA_VUP.sub(r"<blue>\1</span>", text)
