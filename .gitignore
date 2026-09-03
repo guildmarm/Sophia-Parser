@@ -1,4 +1,4 @@
-input/*.json
+input/**
 
 output/*.txt
 
