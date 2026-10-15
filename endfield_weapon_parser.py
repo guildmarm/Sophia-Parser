@@ -5,8 +5,10 @@ import lib.game_files as game_files
 import lib.constants as const
 import time
 import os
+import requests
 import mwparserfromhell
 from mwcleric.wiki_client import WikiClient
+from mwclient.errors import MaximumRetriesExceeded
 
 # Set endfield wiki as mw.cleric site
 site = WikiClient("endfield.wiki.gg")
@@ -45,6 +47,17 @@ for sid in sorted(all_skill_ids):
 
 skill_lines.sort(key=lambda x: x.split('"]')[0].strip('["'))
 weapon_skill_data = ",\n    ".join(skill_lines)
+
+def fetch_wikitext(title, attempts=5, wait=30):
+    for attempt in range(1, attempts + 1):
+        try:
+            page = site.client.pages[title]
+            return page.text() if page.exists else None
+        except (requests.exceptions.ConnectionError, MaximumRetriesExceeded):
+            if attempt == attempts:
+                raise
+            print(f"Connection dropped fetching {title}, retrying in {wait}s ({attempt}/{attempts})")
+            time.sleep(wait)
 
 # Make that sausage
 with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
@@ -98,9 +111,8 @@ with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
         # mw.cleric input
         wiki_hatnote = ""
-        page = site.client.pages[weapon_name_clean]
-        if page.exists:
-            wikitext = page.text()
+        wikitext = fetch_wikitext(weapon_name_clean)
+        if wikitext is not None:
             parsed_code = mwparserfromhell.parse(wikitext)
             for template in parsed_code.filter_templates():
                 if template.name.matches("Hatnote"):

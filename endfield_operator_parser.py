@@ -6,8 +6,10 @@ import lib.constants as const
 import time
 import os
 import re
+import requests
 import mwparserfromhell
 from mwcleric.wiki_client import WikiClient
+from mwclient.errors import MaximumRetriesExceeded
 
 # Set endfield wiki as mw.cleric site
 site = WikiClient("endfield.wiki.gg")
@@ -60,6 +62,17 @@ def get_lead_text(parsed_code, template_name):
             intro_nodes.append(str(node))
     return "".join(intro_nodes).strip()
 
+def fetch_wikitext(title, attempts=5, wait=30):
+    for attempt in range(1, attempts + 1):
+        try:
+            page = site.client.pages[title]
+            return page.text() if page.exists else None
+        except (requests.exceptions.ConnectionError, MaximumRetriesExceeded):
+            if attempt == attempts:
+                raise
+            print(f"Connection dropped fetching {title}, retrying in {wait}s ({attempt}/{attempts})")
+            time.sleep(wait)
+
 # Make that sausage
 with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
     for operator_id, operator_data in char_table.items():
@@ -72,15 +85,15 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_name_clean = general.sanitize_name(operator_name)
 
         # mw.cleric input
-        wiki_params = {p: "" for p in ['fullname', 'fileno', 'theme', 'illustrator', 'jpcv', 'cncv', 'encv', 'krcv', 'matskill', 'matstats']}
+        wiki_params = {p: "" for p in ['fullname', 'fileno', 'theme', 'illustrator', 'jpcv', 'cncv', 'encv', 'krcv', 'matskill', 'matstats', 'headhunting', 'welfare']}
         wiki_skills = {}
         wiki_talents = {}
+        wiki_intro = ""
         wiki_profile = ""
         wiki_changelog = ""
 
-        page = site.client.pages[operator_name]
-        if page.exists:
-            wikitext = page.text()
+        wikitext = fetch_wikitext(operator_name)
+        if wikitext is not None:
             parsed_code = mwparserfromhell.parse(wikitext)
             wiki_intro = get_lead_text(parsed_code, "Operator infobox")
             for template in parsed_code.filter_templates():
@@ -135,6 +148,9 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_tags = operator.resolve_operator_tags(operator_data, char_battle_tags, language)
         starting_operator = operator.get_starting_operator(operator_id)
         banner = operator.resolve_operator_gacha_pools(operator_id, gacha_pool_content, gacha_pool, language)
+        if wiki_params['headhunting'].lower() == "welfare":
+            banner = wiki_params['headhunting']
+        welfare_line = f"|welfare = {wiki_params['welfare']}\n" if wiki_params['welfare'] else ""
         operator_quote = operator.get_operator_quote(operator_data, operator_id, language)
 
         # Operator stats
@@ -187,7 +203,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |sub = {subAttr}
 |starting = {starting_operator}
 |headhunting = {banner}
-|quote = {operator_quote}
+{welfare_line}|quote = {operator_quote}
 |image = 
 {operator_name_image}
 |filename = {operator_display_id}
