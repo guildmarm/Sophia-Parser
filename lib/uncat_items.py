@@ -1,4 +1,4 @@
-# Auto-generated 2026-10-14 by lib/helpers/item.py::save_uncat_items
+# Auto-generated 2026-10-15 by lib/helpers/item.py::save_uncat_items
 # Item IDs whose type has no entry in ITEM_TYPE_NAME (lib/constants.py),
 # grouped by type id. Regenerated on every parser run - do not edit by hand.
 UNCAT_ITEMS = {

@@ -111,13 +111,18 @@ with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
         # mw.cleric input
         wiki_hatnote = ""
+        wiki_source = ""
         wikitext = fetch_wikitext(weapon_name_clean)
         if wikitext is not None:
             parsed_code = mwparserfromhell.parse(wikitext)
             for template in parsed_code.filter_templates():
-                if template.name.matches("Hatnote"):
+                if template.name.matches("Hatnote") and not wiki_hatnote:
                     wiki_hatnote = str(template) + "\n"
-                    break
+                elif template.name.matches("Weapon infobox") and template.has("source"):
+                    wiki_source = str(template.get("source").value).strip()
+
+        if wiki_source:
+            source_text = wiki_source
 
         # Output
         out.write(f"""{{{{-start-}}}}

@@ -244,7 +244,7 @@ def compute_uncategorized_items(item_table, item_list_ids):
     item_list_set = set(item_list_ids)
     for item_id, item_data in item_table.items():
         item_type = item_data.get("type")
-        if item_type in ITEM_TYPE_NAME or item_id in item_list_set:
+        if (item_type in ITEM_TYPE_NAME and item_type != 8) or item_id in item_list_set:
             continue
         uncat[item_type].append(item_id)
 
