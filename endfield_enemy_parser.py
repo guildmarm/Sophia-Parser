@@ -6,8 +6,10 @@ import lib.constants as const
 import time
 import os
 import re
+import requests
 import mwparserfromhell
 from mwcleric.wiki_client import WikiClient
+from mwclient.errors import MaximumRetriesExceeded
 
 # Set endfield wiki as mw.cleric site
 site = WikiClient("endfield.wiki.gg")
@@ -28,6 +30,7 @@ enemy_drop = io.load_json(paths["enemy_drop"])
 enemy_type = io.load_json(paths["enemy_type"])
 enemy_group = io.load_json(paths["enemy_group"])
 wiki_group = io.load_json(paths["wiki_group"])
+char_table = io.load_json(paths["character_table"])
 
 # Load language files
 language = io.load_languages(const.INPUT_DIR)
@@ -42,6 +45,17 @@ def get_wiki_section(text, header):
             return str(section)[heading_len:].strip()
     return ""
 
+def fetch_wikitext(title, attempts=5, wait=30):
+    for attempt in range(1, attempts + 1):
+        try:
+            page = site.client.pages[title]
+            return page.text() if page.exists else None
+        except (requests.exceptions.ConnectionError, MaximumRetriesExceeded):
+            if attempt == attempts:
+                raise
+            print(f"Connection dropped fetching {title}, retrying in {wait}s ({attempt}/{attempts})")
+            time.sleep(wait)
+
 enemy_name_counts = {}
 duplicate_name_map = {}
 
@@ -53,6 +67,8 @@ for enemy_id, display_data in enemy_display.items():
     duplicate_name_map.setdefault(enemy_name_clean, []).append(enemy_id)
 
 duplicate_name_map = {k: v for k, v in duplicate_name_map.items() if len(v) > 1}
+
+operator_names = {general.sanitize_name(general.resolve_text(language["en"], char_data["name"]["id"])) for char_data in char_table.values()}
 
 # Make that sausage
 with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
@@ -69,6 +85,9 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
         # Append the ID if there are duplicates but just the last part of it
         enemy_name, enemy_name_clean, enemy_name_image, enemy_alternate_text = enemy.resolve_enemy_names(enemy_id, enemy_name, enemy_name_clean, enemy_name_image, enemy_name_counts, duplicate_name_map)
+        if enemy_name_clean in operator_names:
+            enemy_name_clean = f"{enemy_name_clean}/Enemy"
+            print(f"{enemy_id} shares a name with an operator, writing to {enemy_name_clean}")
         cn_name = general.resolve_text(language["cn"], name_id)
         tc_name = general.resolve_text(language["tc"], name_id)
         jp_name = general.resolve_text(language["jp"], name_id)
@@ -85,9 +104,8 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         wiki_enemy_tab = ""
         wiki_params = {p: "" for p in ['attack', 'damage', 'base', 'upgrade']}
 
-        page = site.client.pages[enemy_name_clean]
-        if page.exists:
-            wikitext = page.text()
+        wikitext = fetch_wikitext(enemy_name_clean)
+        if wikitext is not None:
             parsed_code = mwparserfromhell.parse(wikitext)
             wiki_overview = get_wiki_section(wikitext, "Overview")
             wiki_addition = get_wiki_section(wikitext, "See Also")
