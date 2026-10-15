@@ -386,7 +386,7 @@ with open(GATHERABLES_OUTPUT, "w", encoding="utf-8") as out:
 # Naturals
 with open(NATURALS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_id in item_list.ITEM_LIST or item_data.get("type") != 8 or item_data.get("sortId1") != -80 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 8 or (item_data.get("sortId1") != -80 and not (item_data.get("sortId1") == -1101 and item_id.startswith(("item_corp_", "item_byproduct_", "item_ranch_")))) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -430,7 +430,7 @@ with open(NATURALS_OUTPUT, "w", encoding="utf-8") as out:
 # AIC Products
 with open(AIC_PRODUCTS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_id in item_list.ITEM_LIST or item_data.get("type") != 8 or item_data.get("sortId1") not in (-81, -82) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 8 or (item_data.get("sortId1") not in (-81, -82) and not (item_data.get("sortId1") == -1101 and item_id.startswith(("item_muck_inn_", "item_Ingredient_")))) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
