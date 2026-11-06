@@ -8,11 +8,11 @@ import os
 import re
 import requests
 import mwparserfromhell
-from mwcleric.wiki_client import WikiClient
+from mwcleric.wikigg_client import WikiggClient
 from mwclient.errors import MaximumRetriesExceeded
 
 # Set endfield wiki as mw.cleric site
-site = WikiClient("endfield.wiki.gg")
+site = WikiggClient("endfield")
 
 # Output file
 OPERATOR_PAGE_OUTPUT = os.path.join(const.OUTPUT_DIR, "full_operator_page_data.txt")
