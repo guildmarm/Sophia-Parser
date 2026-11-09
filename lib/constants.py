@@ -340,6 +340,13 @@ LEVEL_LOCATION = {
     "map02_lv009": "Suiming"
 }
 
+REGION_NAME = {
+    "map01": "Valley IV",
+    "map02": "Wuling",
+    "domain_1": "Valley IV",
+    "domain_2": "Wuling",
+}
+
 DIALOGUE_TYPE = {
     "Operation Prep 1": 1,
     "Operation Prep 2": 2,
@@ -420,8 +427,8 @@ DIALOGUE_TYPE = {
 }
 
 INVESTIGATION_ICONS = {
-    0: "icon_investigate_filed_small.png",
-    1: "icon_investigate_filed_big.png",
+    0: "Investigation_Icon_T1.png",
+    1: "Investigation_Icon_T2.png",
 }
 
 FINDINGS_WIKI_ICONS = {

@@ -78,6 +78,18 @@ BA_ABSORB = re.compile(r"<#ba\.absorb>(.*?)</>")
 BA_ARROWNUM = re.compile(r"<#ba\.arrownum>(.*?)</>")
 BA_ARROWENERGY = re.compile(r"<#ba\.arrowenergy>(.*?)</>")
 
+# Text from findings, could be used in general purpose
+NAR_MARK = re.compile(r"<@nar\.mark>(.*?)</>")
+NAR_LEFT = re.compile(r"<@nar\.left>(.*?)</>")
+NAR_CENTER = re.compile(r"<@nar\.center>(.*?)</>")
+NAR_QUOTE = re.compile(r"<@nar\.quote>(.*?)</>")
+NAR_ENTER = re.compile(r"<@nar\.enter></>")
+NAR_KEY = re.compile(r"<@nar\.key>(.*?)</>")
+IMAGE = re.compile(r"<image>(.*?/)?(.*?)</image>")
+STRIKE = re.compile(r"<s>(.*?)</s>")
+ITALIC = re.compile(r"<i>(.*?)</i>")
+QU_KEY = re.compile(r"<@qu\.key>(.*?)</>")
+
 def efdb_format(text: str) -> str:
     if not text:
         return text
@@ -251,5 +263,37 @@ def module_format(text: str) -> str:
     text = QU_KEY.sub(r"{{Color|\1|0}}", text) # Item help text
     text = TIPS_KEY.sub(lambda m: f"[[{m.group(1).replace('[', '(').replace(']', ')')}]]", text) # Item help text
     text = OBT_KEY.sub(lambda m: f"[[{m.group(1).replace('[', '(').replace(']', ')')}]]", text) # Item help text
+
+    return text
+
+def findings_format(text: str) -> str:
+    if not text:
+        return text
+
+    # Orange
+    text = QU_KEY.sub(r"{{Color|\1|1a}}", text)
+
+    # Align
+    text = NAR_CENTER.sub(r'<center>\1</center>', text)
+
+    # Italic
+    text = ITALIC.sub(r"''\1''", text)
+    text = NAR_QUOTE.sub(r"''\1''", text)
+
+    # \n
+    text = NAR_ENTER.sub("</br>", text)
+
+    # Brown
+    text = NAR_KEY.sub(r"'''\1'''", text)
+
+    # Strike
+    text = STRIKE.sub(r"<s>\1</s>", text)
+
+    # Useless
+    text = NAR_MARK.sub(r"\1", text)
+    text = NAR_LEFT.sub(r"\1", text)
+    text = text.replace("\u200b", "")
+
+    text = IMAGE.sub(r"[[File:\2.png|center|class=responsive-image]]", text)
 
     return text
