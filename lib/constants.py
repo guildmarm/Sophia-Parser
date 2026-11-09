@@ -294,19 +294,6 @@ ITEM_TYPE_NAME = {
     98: "Sanity Usage Permit"
 }
 
-# MANUAL ENTRY
-ITEM_TYPE_NAME_BY_ID = {
-    "business_card_topic_normal_2": "Initial Link Profile Theme",
-    "business_card_topic_normal_4": "Arriving at Wuling Profile Theme",
-    "item_char_skill_level_1_6": "Protoprism",
-    "item_char_skill_level_7_12": "Protohedron",
-    "item_diamond": "Oroberyl",
-    "item_expcard_stage1_high": "Advanced Combat Record",
-    "item_expcard_stage2_low": "Elementary Cognitive Carrier",
-    "item_gold": "T-Creds",
-    "item_ticketgacha_standard_single": "Basic HH Permit",
-}
-
 MISSION_IMPORTANCE = {
     0: "Urgent",
     1: "Important",
