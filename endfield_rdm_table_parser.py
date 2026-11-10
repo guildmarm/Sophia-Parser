@@ -171,10 +171,10 @@ with open(RDM_AREAS_OUTPUT, "w", encoding="utf-8") as out:
 		
 		page = site.client.pages[area + " (location)"]
 		if page.exists:
-			pass
+			area += " (location)"
 		else: page = site.client.pages[area]
 		if page.exists:
-			wikitext = re.sub(r"{{Area overview head}}[\s\S]*?{{Table end}}", table, page.text(), re.DOTALL | re.MULTILINE)
+			wikitext = re.sub(r"{{Area overview head}}[\s\S]*?{{Table end}}", table, page.text(), flags = re.DOTALL | re.MULTILINE)
 			out.write(f"""{{{{-start-}}}}
 '''{area}'''
 {wikitext}
