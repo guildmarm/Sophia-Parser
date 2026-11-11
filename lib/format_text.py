@@ -77,6 +77,7 @@ BA_ROSSI = re.compile(r"<#ba\.rossi>(.*?)</>")
 BA_ABSORB = re.compile(r"<#ba\.absorb>(.*?)</>")
 BA_ARROWNUM = re.compile(r"<#ba\.arrownum>(.*?)</>")
 BA_ARROWENERGY = re.compile(r"<#ba\.arrowenergy>(.*?)</>")
+BA_STATIC = re.compile(r"<#ba\.static>(.*?)</>")
 
 def efdb_format(text: str) -> str:
     if not text:
@@ -163,6 +164,7 @@ def efdb_format(text: str) -> str:
     text = BA_ABSORB.sub(r"{{G|Absorb|\1}}", text)
     text = BA_ARROWNUM.sub(r"{{G|Hunting Arrow|\1}}", text)
     text = BA_ARROWENERGY.sub(r"{{G|Sign|\1}}", text)
+    text = BA_STATIC.sub(r"{{G|Immobilization|\1}}", text)
 
     return text
 
@@ -232,6 +234,7 @@ def module_format(text: str) -> str:
     text = BA_ABSORB.sub(r"{{G|Absorb|\1}}", text)
     text = BA_ARROWNUM.sub(r"{{G|Hunting Arrow|\1}}", text)
     text = BA_ARROWENERGY.sub(r"{{G|Sign|\1}}", text)
+    text = BA_STATIC.sub(r"{{G|Immobilization|\1}}", text)
 
     # Text that uses the <span> template
     text = BA_VUP.sub(r"<blue>\1</span>", text)

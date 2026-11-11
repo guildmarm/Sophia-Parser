@@ -100,5 +100,4 @@ def build_paths(input_dir: str) -> dict[str, str]:
         "mission_table": os.path.join(input_dir, MISSION_TABLE),
         "mission_type_info": os.path.join(input_dir, MISSION_TYPE_INFO),
         "rec_weapon": os.path.join(input_dir, REC_WEAPON),
-        "rdm_table": os.path.join(input_dir, RDM_TABLE),
     }
