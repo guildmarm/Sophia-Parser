@@ -21,6 +21,8 @@ echo "Parsing Operators"
 python3 "$PARSER_DIR/endfield_operator_parser.py"
 echo "Parsing Weapons"
 python3 "$PARSER_DIR/endfield_weapon_parser.py"
+echo "Parsing RDM tables"
+python3 "$PARSER_DIR/endfield_rdm_table_parser.py"
 echo "Parse Complete!"
 echo "Sleeping for 20 seconds to help prevent rate limit"
 sleep 20
@@ -45,6 +47,9 @@ python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/full_weapon_page_data.txt"
 python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/module_weapon_skill_data.txt" -force -notitle -summary:"$SUMMARY"
 echo "Pushing operator data to the wiki..."
 python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/full_operator_page_data.txt" -force -notitle -summary:"$SUMMARY"
+echo "Pushing rdm tables data to the wiki..."
+python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/rdm_regions_page_data.txt" -force -notitle -summary:"$SUMMARY"
+python3 pwb.py pagefromfile -file:"$PARSER_DIR/output/rdm_areas_page_data.txt" -force -notitle -summary:"$SUMMARY"
 
 # Items
 echo "Pushing employment contract data to the wiki..."

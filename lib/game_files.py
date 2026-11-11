@@ -48,6 +48,7 @@ RADIO_TABLE = "RadioTable.json"
 MISSION_TABLE = "MissionTable.json"
 MISSION_TYPE_INFO = "MissionTypeInfoTable.json"
 REC_WEAPON = "CharWpnRecommendTable.json"
+RDM_TABLE = "DomainDataTable.json"
 
 
 def build_paths(input_dir: str) -> dict[str, str]:
