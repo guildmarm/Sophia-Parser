@@ -3,3 +3,6 @@ input/**
 output/*.txt
 
 **/__pycache__/
+
+.vscode/
+

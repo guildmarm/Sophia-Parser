@@ -35,6 +35,7 @@ HEADHUNTING_OUTPUT = os.path.join(const.OUTPUT_DIR, "headhunting_page_data.txt")
 MISCELLANEOUS_OUTPUT = os.path.join(const.OUTPUT_DIR, "miscellaneous_page_data.txt")
 PERSONAL_DEVICE_OUTPUT = os.path.join(const.OUTPUT_DIR, "personal_device_page_data.txt")
 ORNAMENTAL_OUTPUT = os.path.join(const.OUTPUT_DIR, "ornamental_page_data.txt")
+INN_RECIPES_OUTPUT = os.path.join(const.OUTPUT_DIR, "inn_recipes_page_data.txt")
 os.makedirs(const.OUTPUT_DIR, exist_ok=True)
 
 paths = game_files.build_paths(const.INPUT_DIR)
@@ -386,7 +387,7 @@ with open(GATHERABLES_OUTPUT, "w", encoding="utf-8") as out:
 # Naturals
 with open(NATURALS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_id in item_list.ITEM_LIST or item_data.get("type") != 8 or (item_data.get("sortId1") != -80 and not (item_data.get("sortId1") == -1101 and item_id.startswith(("item_corp_", "item_byproduct_", "item_ranch_")))) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 8 or (item_data.get("sortId1") != -80 and not (item_data.get("sortId1") == -1101 and item_id.startswith(("item_corp_", "item_byproduct_", "item_ranch_")))) or (item_data.get("sortId1") == -80 and item_data.get("showingType") == 4) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -430,7 +431,7 @@ with open(NATURALS_OUTPUT, "w", encoding="utf-8") as out:
 # AIC Products
 with open(AIC_PRODUCTS_OUTPUT, "w", encoding="utf-8") as out:
     for item_id, item_data in item_table.items():
-        if item_id in item_list.ITEM_LIST or item_data.get("type") != 8 or (item_data.get("sortId1") not in (-81, -82) and not (item_data.get("sortId1") == -1101 and item_id.startswith(("item_muck_inn_", "item_Ingredient_")))) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 8 or (item_data.get("sortId1") not in (-81, -82) and not (item_data.get("sortId1") == -1101 and item_id.startswith(("item_muck_inn_", "item_Ingredient_"))) and not (item_data.get("sortId1") == -80 and item_data.get("showingType") == 4)) or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
             continue
 
         info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
@@ -1299,12 +1300,15 @@ with open(ORNAMENTAL_OUTPUT, "w", encoding="utf-8") as out:
         if info.is_invalid:
             continue
 
+        image_name = general.sanitize_image_name(info.name)
+        ornamental_images = info.image if "Endministrator" in info.name else f"{image_name}_icon.png:Icon;\n{image_name}.png:Full"
+
         out.write(f"""{{{{-start-}}}}
 '''{info.name_clean}'''
 {{{{Item infobox
 |name = {info.name}
 |filename = {info.item_id_output}
-|images = {info.image}
+|images = {ornamental_images}
 |cnname = {info.cn}
 |tcname = {info.tc}
 |jpname = {info.jp}
@@ -1324,6 +1328,52 @@ with open(ORNAMENTAL_OUTPUT, "w", encoding="utf-8") as out:
 ==Navigation==
 {{{{Items}}}}
 [[Category:Ornamental]]
+
+{{{{-stop-}}}}
+
+""")
+        if item_id not in item_list.ITEM_LIST:
+            item_list.ITEM_LIST.append(item_id)
+            newly_processed_items.append(item_id)
+
+# Inn Recipes
+with open(INN_RECIPES_OUTPUT, "w", encoding="utf-8") as out:
+    for item_id, item_data in item_table.items():
+        if item_id in item_list.ITEM_LIST or item_data.get("type") != 109 or any(x in item_id for x in ("chr_0002_endminm", "chr_9000_endmin")):
+            continue
+
+        info = GeneralItemInfo(item_id, item_data, language, system_jump_table, name_counts)
+        if info.is_invalid:
+            continue
+
+        base_name = info.name[len("Recipe: "):] if info.name.startswith("Recipe: ") else info.name
+        recipe_name = f"Recipe: {base_name}"
+
+        out.write(f"""{{{{-start-}}}}
+'''{general.sanitize_name(recipe_name)}'''
+{{{{Item infobox
+|name = {recipe_name}
+|filename = {info.item_id_output}
+|images = Recipe {general.sanitize_image_name(base_name)}.png
+|cnname = {info.cn}
+|tcname = {info.tc}
+|jpname = {info.jp}
+|krname = {info.kr}
+|spname = {info.sp}
+|runame = {info.ru}
+|type = Inn Recipe
+|rarity = {info.rarity}
+}}}}
+'''{base_name}''' is an [[Inn Recipes|inn recipe]] [[item]] in ''[[Arknights: Endfield]]''.
+{{{{Item description|{info.desc}|{info.deco}}}}}
+==Usage==
+{info.desc}
+==Acquisition==
+{info.source}
+
+==Navigation==
+{{{{Items}}}}
+[[Category:Inn Recipes]]
 
 {{{{-stop-}}}}
 
