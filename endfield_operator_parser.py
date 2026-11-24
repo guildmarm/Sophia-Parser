@@ -38,13 +38,14 @@ gacha_pool = io.load_json(paths["gacha_pool"])
 enums_table = io.load_json(paths["pot_effect_enums"])
 weapon_basic = io.load_json(paths["weapon_basic"])
 rec_weapon = io.load_json(paths["rec_weapon"])
+picture_table = io.load_json(paths["picture_table"])
 
 # Load language files
 language = io.load_languages(const.INPUT_DIR)
 
 # mw.cleric helpers
 def get_wiki_section(text, header):
-    pattern = rf"==\s*{header}\s*==\s*(.*?)(?=\n==|$)"
+    pattern = rf"==\s*{header}\s*==\s*(.*?)(?=\n==[^=]|$)"
     match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
     return match.group(1).strip() if match else ""
 
@@ -187,6 +188,26 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
         # Operator dialogue
         operator_dialogue = operator.get_operator_dialogue(operator_data, language)
+        dialogue_open = ""
+        dialogue_close = ""
+        if operator_name == "Endministrator":
+            male_dialogue = operator_dialogue.replace("|no=", "|gender=M|no=")
+            operator_dialogue = operator_dialogue.replace("|no=", "|gender=F|no=")
+            dialogue_open = "<tabber>\nFemale=\n"
+            dialogue_close = f"\n|-|\nMale=\n{{{{Operator dialogue head}}}}\n{male_dialogue}\n{{{{Table end}}}}\n</tabber>"
+
+        # Operator snapshots
+        operator_snapshots = operator.get_operator_snapshots(operator_id, picture_table, item_table, language)
+        skin_alternate = "\n|alternate = true" if operator_name == "Endministrator" else ""
+        wiki_animations = ""
+        wiki_media = ""
+        wiki_misc = ""
+
+        gallery_wikitext = fetch_wikitext(f"{operator_name_clean}/Gallery")
+        if gallery_wikitext is not None:
+            wiki_animations = get_wiki_section(gallery_wikitext, "Animations")
+            wiki_media = get_wiki_section(gallery_wikitext, "Media")
+            wiki_misc = get_wiki_section(gallery_wikitext, "Miscellaneous")
 
         # Output
         out.write(f"""{{{{-start-}}}}
@@ -288,9 +309,31 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-start-}}}}
 '''{operator_name_clean}/Dialogue'''
 {{{{Operator tab}}}}
-{{{{Operator dialogue head}}}}
+{dialogue_open}{{{{Operator dialogue head}}}}
 {operator_dialogue}
-{{{{Table end}}}}
+{{{{Table end}}}}{dialogue_close}
+
+{{{{-stop-}}}}
+
+{{{{-start-}}}}
+'''{operator_name_clean}/Gallery'''
+{{{{Operator tab}}}}
+
+==Official Artwork==
+{{{{Operator skin
+|name = Base{skin_alternate}}}}}
+
+==Operator Snapshot==
+{operator_snapshots}
+
+==Animations==
+{wiki_animations}
+
+==Media==
+{wiki_media}
+
+==Miscellaneous==
+{wiki_misc}
 
 {{{{-stop-}}}}
 

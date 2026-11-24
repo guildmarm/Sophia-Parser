@@ -1343,3 +1343,29 @@ def get_operator_recommended_weapons(operator_id, rec_weapon, weapon_basic, lang
     matstats = resolve_weapon_names(rec_data.get("weaponIds2", []))
 
     return matskill, matstats
+
+def get_operator_snapshots(operator_id, picture_table, item_table, language, lang="en"):
+    pics = []
+    for pic_id, pic in picture_table.items():
+        id_match = re.match(r"pic_(\d+)_(.+?)(?:_ex\d+)?$", pic_id)
+        if not id_match or id_match.group(2) != operator_id:
+            continue
+        pics.append((int(id_match.group(1)), pic_id, pic))
+
+    pics.sort(key=lambda x: (x[0], "_ex" in x[1]))
+
+    snapshot_blocks = []
+    for order, pic_id, pic in pics:
+        title = general.resolve_text(language[lang], (pic.get("name") or {}).get("id"))
+        illust = general.resolve_text(language[lang], (pic.get("author") or {}).get("id"))
+        item = item_table.get(pic.get("unlockCharPictureItem") or f"item_{pic_id}", {})
+        desc = general.resolve_text(language[lang], (item.get("decoDesc") or {}).get("id"))
+
+        ver = ""
+        ex_match = re.search(r"_ex(\d+)", pic_id)
+        if ex_match:
+            ver = f"\n|ver = {int(ex_match.group(1))}"
+
+        snapshot_blocks.append(f"{{{{Operator snapshot\n|title = {title}\n|desc = {desc}\n|ilust = {illust}\n|pot = {order}{ver}}}}}")
+
+    return "\n".join(snapshot_blocks)

@@ -291,7 +291,10 @@ ITEM_TYPE_NAME = {
     95: "High Tier Upgrade Item",
     96: "Mark of Perseverance",
     97: "Sanity Extractor",
-    98: "Sanity Usage Permit"
+    98: "Sanity Usage Permit",
+    101: "Personal Device",
+    109: "Inn Recipe",
+    111: "Ornamental"
 }
 
 MISSION_IMPORTANCE = {

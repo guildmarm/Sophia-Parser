@@ -1,4 +1,4 @@
-# Auto-generated 2026-10-15 by lib/helpers/item.py::save_uncat_items
+# Auto-generated 2026-11-04 by lib/helpers/item.py::save_uncat_items
 # Item IDs whose type has no entry in ITEM_TYPE_NAME (lib/constants.py),
 # grouped by type id. Regenerated on every parser run - do not edit by hand.
 UNCAT_ITEMS = {
@@ -61,6 +61,8 @@ UNCAT_ITEMS = {
         "achv_event_clean_2",
         "achv_event_clean_2_plate",
         "achv_event_contingency_contract_0_3",
+        "achv_event_contingency_contract_1_3",
+        "achv_event_contingency_contract_1_3_plate",
         "achv_event_dungfight_2",
         "achv_event_dungfight_2_plate",
         "achv_event_formula2_2",
@@ -132,6 +134,7 @@ UNCAT_ITEMS = {
         "achv_quest_gm02m27_2",
         "achv_quest_liino_2",
         "achv_quest_mifu_2",
+        "achv_quest_minghe_2",
         "achv_quest_sm2l10m3_2",
         "achv_quest_typhoea_2",
         "achv_quest_wulfa_2",
@@ -158,6 +161,7 @@ UNCAT_ITEMS = {
         "item_shot_anim_lino_m_1",
         "item_shot_anim_lizhiyan_m_1",
         "item_shot_anim_mifu_s_1",
+        "item_shot_anim_minghe_m_1",
         "item_shot_anim_pelica_s_1",
         "item_shot_anim_pograni_s_1",
         "item_shot_anim_si_m_1",
