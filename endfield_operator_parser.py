@@ -6,11 +6,13 @@ import lib.constants as const
 import time
 import os
 import re
+import requests
 import mwparserfromhell
-from mwcleric.wiki_client import WikiClient
+from mwcleric.wikigg_client import WikiggClient
+from mwclient.errors import MaximumRetriesExceeded
 
 # Set endfield wiki as mw.cleric site
-site = WikiClient("endfield.wiki.gg")
+site = WikiggClient("endfield")
 
 # Output file
 OPERATOR_PAGE_OUTPUT = os.path.join(const.OUTPUT_DIR, "full_operator_page_data.txt")
@@ -36,13 +38,14 @@ gacha_pool = io.load_json(paths["gacha_pool"])
 enums_table = io.load_json(paths["pot_effect_enums"])
 weapon_basic = io.load_json(paths["weapon_basic"])
 rec_weapon = io.load_json(paths["rec_weapon"])
+picture_table = io.load_json(paths["picture_table"])
 
 # Load language files
 language = io.load_languages(const.INPUT_DIR)
 
 # mw.cleric helpers
 def get_wiki_section(text, header):
-    pattern = rf"==\s*{header}\s*==\s*(.*?)(?=\n==|$)"
+    pattern = rf"==\s*{header}\s*==\s*(.*?)(?=\n==[^=]|$)"
     match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
     return match.group(1).strip() if match else ""
 
@@ -60,6 +63,17 @@ def get_lead_text(parsed_code, template_name):
             intro_nodes.append(str(node))
     return "".join(intro_nodes).strip()
 
+def fetch_wikitext(title, attempts=5, wait=30):
+    for attempt in range(1, attempts + 1):
+        try:
+            page = site.client.pages[title]
+            return page.text() if page.exists else None
+        except (requests.exceptions.ConnectionError, MaximumRetriesExceeded):
+            if attempt == attempts:
+                raise
+            print(f"Connection dropped fetching {title}, retrying in {wait}s ({attempt}/{attempts})")
+            time.sleep(wait)
+
 # Make that sausage
 with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
     for operator_id, operator_data in char_table.items():
@@ -72,15 +86,15 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_name_clean = general.sanitize_name(operator_name)
 
         # mw.cleric input
-        wiki_params = {p: "" for p in ['fullname', 'fileno', 'theme', 'illustrator', 'jpcv', 'cncv', 'encv', 'krcv', 'matskill', 'matstats']}
+        wiki_params = {p: "" for p in ['fullname', 'realname', 'fileno', 'theme', 'illustrator', 'jpcv', 'cncv', 'encv', 'krcv', 'matskill', 'matstats', 'headhunting', 'welfare']}
         wiki_skills = {}
         wiki_talents = {}
+        wiki_intro = ""
         wiki_profile = ""
         wiki_changelog = ""
 
-        page = site.client.pages[operator_name]
-        if page.exists:
-            wikitext = page.text()
+        wikitext = fetch_wikitext(operator_name)
+        if wikitext is not None:
             parsed_code = mwparserfromhell.parse(wikitext)
             wiki_intro = get_lead_text(parsed_code, "Operator infobox")
             for template in parsed_code.filter_templates():
@@ -135,6 +149,9 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_tags = operator.resolve_operator_tags(operator_data, char_battle_tags, language)
         starting_operator = operator.get_starting_operator(operator_id)
         banner = operator.resolve_operator_gacha_pools(operator_id, gacha_pool_content, gacha_pool, language)
+        if wiki_params['headhunting'].lower() == "welfare":
+            banner = wiki_params['headhunting']
+        welfare_line = f"|welfare = {wiki_params['welfare']}\n" if wiki_params['welfare'] else ""
         operator_quote = operator.get_operator_quote(operator_data, operator_id, language)
 
         # Operator stats
@@ -152,7 +169,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_upgrade_items = operator.get_operator_upgrade_items(operator_id, char_growth, item_table, language)
 
         # Operator skills
-        operator_combat_skills = operator.get_operator_combat_skills(operator_id, char_growth, skill_patch, language, weapon, wiki_skills)
+        operator_combat_skills = operator.get_operator_combat_skills(operator_id, char_growth, skill_patch, potential_effect, language, weapon, wiki_skills)
         operator_skill_items = operator.get_operator_skill_items(operator_id, char_growth, item_table, language)
 
         # Operator Talents and Base Skills
@@ -171,6 +188,35 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
         # Operator dialogue
         operator_dialogue = operator.get_operator_dialogue(operator_data, language)
+        dialogue_open = ""
+        dialogue_close = ""
+        if operator_name == "Endministrator":
+            male_dialogue = operator_dialogue.replace("|no=", "|gender=M|no=")
+            operator_dialogue = operator_dialogue.replace("|no=", "|gender=F|no=")
+            dialogue_open = "<tabber>\nFemale=\n"
+            dialogue_close = f"\n|-|\nMale=\n{{{{Operator dialogue head}}}}\n{male_dialogue}\n{{{{Table end}}}}\n</tabber>"
+
+        # Operator snapshots
+        operator_snapshots = operator.get_operator_snapshots(operator_id, picture_table, item_table, language)
+        skin_alternate = "\n|alternate = true" if operator_name == "Endministrator" else ""
+        wiki_animations = ""
+        wiki_media = ""
+        wiki_misc = ""
+
+        gallery_wikitext = fetch_wikitext(f"{operator_name_clean}/Gallery")
+        if gallery_wikitext is not None:
+            wiki_animations = get_wiki_section(gallery_wikitext, "Animations")
+            wiki_media = get_wiki_section(gallery_wikitext, "Media")
+            wiki_misc = get_wiki_section(gallery_wikitext, "Miscellaneous")
+
+        wiki_dialogue_extras = ""
+        dialogue_wikitext = fetch_wikitext(f"{operator_name_clean}/Dialogue")
+        if dialogue_wikitext is not None:
+            extras = get_wiki_section(dialogue_wikitext, "Extras")
+            if extras:
+                wiki_dialogue_extras = f"\n\n==Extras==\n{extras}"
+
+        realname_line = f"|realname = {wiki_params['realname']}\n" if wiki_params['realname'] else ""
 
         # Output
         out.write(f"""{{{{-start-}}}}
@@ -187,7 +233,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |sub = {subAttr}
 |starting = {starting_operator}
 |headhunting = {banner}
-|quote = {operator_quote}
+{welfare_line}|quote = {operator_quote}
 |image = 
 {operator_name_image}
 |filename = {operator_display_id}
@@ -198,7 +244,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |spname = {sp_name}
 |runame = {ru_name}
 |fullname = {wiki_params['fullname']}
-|fileno = {wiki_params['fileno']}
+{realname_line}|fileno = {wiki_params['fileno']}
 |theme = {wiki_params['theme']}
 |illustrator = {wiki_params['illustrator']}
 |jpcv = {wiki_params['jpcv']}
@@ -272,9 +318,31 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 {{{{-start-}}}}
 '''{operator_name_clean}/Dialogue'''
 {{{{Operator tab}}}}
-{{{{Operator dialogue head}}}}
+{dialogue_open}{{{{Operator dialogue head}}}}
 {operator_dialogue}
-{{{{Table end}}}}
+{{{{Table end}}}}{dialogue_close}{wiki_dialogue_extras}
+
+{{{{-stop-}}}}
+
+{{{{-start-}}}}
+'''{operator_name_clean}/Gallery'''
+{{{{Operator tab}}}}
+
+==Official Artwork==
+{{{{Operator skin
+|name = Base{skin_alternate}}}}}
+
+==Operator Snapshot==
+{operator_snapshots}
+
+==Animations==
+{wiki_animations}
+
+==Media==
+{wiki_media}
+
+==Miscellaneous==
+{wiki_misc}
 
 {{{{-stop-}}}}
 

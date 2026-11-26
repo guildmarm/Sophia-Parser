@@ -54,6 +54,7 @@ FINDING_GROUP = "PrtsFirstLv.json"
 FINDING_CATEGORY = "PrtsCategory.json"
 INVESTIGATE_TABLE = "PrtsInvestigate.json"
 INVESTIGATE_COMMENT_TABLE = "PrtsNote.json"
+PICTURE_TABLE = "PictureTable.json"
 
 
 def build_paths(input_dir: str) -> dict[str, str]:
@@ -111,4 +112,5 @@ def build_paths(input_dir: str) -> dict[str, str]:
         "finding_category": os.path.join(input_dir, FINDING_CATEGORY),
         "investigate_table": os.path.join(input_dir, INVESTIGATE_TABLE),
         "investigate_comment_table": os.path.join(input_dir, INVESTIGATE_COMMENT_TABLE),
+        "picture_table": os.path.join(input_dir, PICTURE_TABLE),
     }

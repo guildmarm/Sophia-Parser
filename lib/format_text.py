@@ -4,6 +4,7 @@ import re
 BA_VUP = re.compile(r"<@ba\.vup>(.*?)</>")
 BA_POISE = re.compile(r"<@ba\.poise>(.*?)</>")
 BA_KEY = re.compile(r"<@ba\.key>(.*?)</>")
+GD_KEY = re.compile(r"<@gd\.key>(.*?)</>")
 BA_HEAL = re.compile(r"<@ba\.heal>(.*?)</>")
 BA_INFO = re.compile(r"<@ba\.info>(.*?)</>")
 BA_PD = re.compile(r"<@ba\.pd>(.*?)</>") # Physical Damage
@@ -37,6 +38,7 @@ BA_SPELLINFLICT = re.compile(r"<#ba\.spellinflict>(.*?)</>")
 BA_SPELLINFLICTONCHAR = re.compile(r"<#ba\.spellinflictonchar>(.*?)</>")
 BA_FIREINFLICT = re.compile(r"<#ba\.fireinflict>(.*?)</>")
 BA_PULSEINFLICT = re.compile(r"<#ba\.pulseinflict>(.*?)</>")
+BA_PULSEONCHAR = re.compile(r"<#ba\.pulseonchar>(.*?)</>")
 BA_CRYSTINFLICT = re.compile(r"<#ba\.crystinflict>(.*?)</>")
 BA_CRYSTONCHAR = re.compile(r"<#ba\.crystonchar>(.*?)</>")
 BA_NATURALINFLICT = re.compile(r"<#ba\.naturalinflict>(.*?)</>")
@@ -77,6 +79,8 @@ BA_ROSSI = re.compile(r"<#ba\.rossi>(.*?)</>")
 BA_ABSORB = re.compile(r"<#ba\.absorb>(.*?)</>")
 BA_ARROWNUM = re.compile(r"<#ba\.arrownum>(.*?)</>")
 BA_ARROWENERGY = re.compile(r"<#ba\.arrowenergy>(.*?)</>")
+BA_STATIC = re.compile(r"<#ba\.static>(.*?)</>")
+BA_FIXEDDAMAGE = re.compile(r"<#ba\.fixeddamage>(.*?)</>")
 
 # Text from findings, could be used in general purpose
 NAR_MARK = re.compile(r"<@nar\.mark>(.*?)</>")
@@ -102,6 +106,7 @@ def efdb_format(text: str) -> str:
     text = BA_VUP.sub(r"{{Color|\1|1d}}", text)
     text = BA_POISE.sub(r"{{Color|\1|2}}", text)
     text = BA_KEY.sub(r"{{Color|\1|7}}", text)
+    text = GD_KEY.sub(r"{{Color|\1|7}}", text)
     text = BA_HEAL.sub(r"{{Color|\1|1c}}", text)
     text = BA_INFO.sub(r"{{Color|\1|9}}", text)
     text = BA_PD.sub(r"{{Color|\1|1}}", text) # Physical Damage
@@ -135,6 +140,7 @@ def efdb_format(text: str) -> str:
     text = BA_SPELLINFLICTONCHAR.sub(r"{{G|Arts Infliction|\1}}", text)
     text = BA_FIREINFLICT.sub(r"{{G|Heat Infliction|\1}}", text)
     text = BA_PULSEINFLICT.sub(r"{{G|Electric Infliction|\1}}", text)
+    text = BA_PULSEONCHAR.sub(r"{{G|Electric Infliction|\1}}", text)
     text = BA_CRYSTINFLICT.sub(r"{{G|Cryo Infliction|\1}}", text)
     text = BA_CRYSTONCHAR.sub(r"{{G|Cryo Infliction|\1}}", text)
     text = BA_NATURALINFLICT.sub(r"{{G|Nature Infliction|\1}}", text)
@@ -175,6 +181,8 @@ def efdb_format(text: str) -> str:
     text = BA_ABSORB.sub(r"{{G|Absorb|\1}}", text)
     text = BA_ARROWNUM.sub(r"{{G|Hunting Arrow|\1}}", text)
     text = BA_ARROWENERGY.sub(r"{{G|Sign|\1}}", text)
+    text = BA_STATIC.sub(r"{{G|Immobilization|\1}}", text)
+    text = BA_FIXEDDAMAGE.sub(r"{{G|Fixed DMG|\1}}", text)
 
     return text
 
@@ -204,6 +212,7 @@ def module_format(text: str) -> str:
     text = BA_SPELLINFLICTONCHAR.sub(r"{{G|Arts Infliction|\1}}", text)
     text = BA_FIREINFLICT.sub(r"{{G|Heat Infliction|\1}}", text)
     text = BA_PULSEINFLICT.sub(r"{{G|Electric Infliction|\1}}", text)
+    text = BA_PULSEONCHAR.sub(r"{{G|Electric Infliction|\1}}", text)
     text = BA_CRYSTINFLICT.sub(r"{{G|Cryo Infliction|\1}}", text)
     text = BA_CRYSTONCHAR.sub(r"{{G|Cryo Infliction|\1}}", text)
     text = BA_NATURALINFLICT.sub(r"{{G|Nature Infliction|\1}}", text)
@@ -244,11 +253,14 @@ def module_format(text: str) -> str:
     text = BA_ABSORB.sub(r"{{G|Absorb|\1}}", text)
     text = BA_ARROWNUM.sub(r"{{G|Hunting Arrow|\1}}", text)
     text = BA_ARROWENERGY.sub(r"{{G|Sign|\1}}", text)
+    text = BA_STATIC.sub(r"{{G|Immobilization|\1}}", text)
+    text = BA_FIXEDDAMAGE.sub(r"{{G|Fixed DMG|\1}}", text)
 
     # Text that uses the <span> template
     text = BA_VUP.sub(r"<blue>\1</span>", text)
     text = BA_POISE.sub(r"<stagger>\1</span>", text)
     text = BA_KEY.sub(r"<key>\1</span>", text)
+    text = GD_KEY.sub(r"<key>\1</span>", text)
     text = BA_HEAL.sub(r"<green>\1</span>", text)
     text = BA_INFO.sub(r"<grey>\1</span>", text)
     #text = BA_PD.sub(r"{{Color|\1|1}}", text) # Physical Damage

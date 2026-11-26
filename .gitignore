@@ -3,3 +3,8 @@ input/**
 output/*.txt
 
 **/__pycache__/
+
+.pytest_cache/
+
+.vscode/
+

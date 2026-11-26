@@ -291,7 +291,10 @@ ITEM_TYPE_NAME = {
     95: "High Tier Upgrade Item",
     96: "Mark of Perseverance",
     97: "Sanity Extractor",
-    98: "Sanity Usage Permit"
+    98: "Sanity Usage Permit",
+    101: "Personal Device",
+    109: "Inn Recipe",
+    111: "Ornamental"
 }
 
 MISSION_IMPORTANCE = {
@@ -348,8 +351,8 @@ DIALOGUE_TYPE = {
     "Operator Promotion 3": 11,
     "Operator Promotion 4": 12,
     "Operator Reporting for Duty": 13,
-    "Standing by 1": 14,
-    "Standing by 2": 15,
+    "Standing By 1": 14,
+    "Standing By 2": 15,
     "Assigning to Facility": 16,
     "Greeting 1": 17,
     "Greeting 2": 18,
