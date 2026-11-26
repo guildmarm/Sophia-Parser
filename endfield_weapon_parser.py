@@ -180,7 +180,7 @@ with open(WEAPON_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
 # Make that sausage AGAIN (This is for the Weapon Skill data module)
 with open(WEAPON_SKILL_MODULE_OUTPUT, "w", encoding="utf-8") as out:
-        out.write(f"""{{{{-start-}}}}
+    out.write(f"""{{{{-start-}}}}
 '''Module:Weapon skill/data'''
 local data={{
     {weapon_skill_data}

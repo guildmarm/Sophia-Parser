@@ -1,11 +1,5 @@
-from lib.io import load_json
-from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT
-from lib.format_text import module_format, efdb_format
+from lib.constants import TARGET_LEVELS
 import lib.general as general
-from collections import OrderedDict, defaultdict
-import math
-import html
-import re
 
 def resolve_enemy_names(enemy_id, enemy_name, enemy_name_clean, enemy_name_image, enemy_name_counts, duplicate_name_map):
     if enemy_name_counts.get(enemy_name_clean, 0) > 1:
@@ -30,7 +24,7 @@ def resolve_enemy_names(enemy_id, enemy_name, enemy_name_clean, enemy_name_image
 
 def resolve_enemy_species(enemy_id, enemy_group, wiki_group, language, lang="en"):
     enemy_species = ""
-    for entry_id, entry_data in enemy_group.items():
+    for entry_data in enemy_group.values():
         ref_id = entry_data.get("refMonsterTemplateId")
         if ref_id == enemy_id:
             group_id = entry_data.get("groupId")
@@ -40,7 +34,7 @@ def resolve_enemy_species(enemy_id, enemy_group, wiki_group, language, lang="en"
 
     if group_id:
         group_name_id = None
-        for group_type, group_list_data in wiki_group.items():
+        for group_list_data in wiki_group.values():
             for group in group_list_data.get("list", []):
                 if group.get("groupId") == group_id:
                     group_name_id = group.get("groupName", {}).get("id")

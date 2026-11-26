@@ -1,10 +1,5 @@
-from lib.io import load_json
-from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS
-from lib.format_text import module_format, efdb_format
+from lib.format_text import module_format
 import lib.general as general
-from collections import OrderedDict, defaultdict
-import math
-import html
 import re
 
 def get_weapon_type(weapon_id: str) -> str:
@@ -64,7 +59,7 @@ def build_weapon_skill_lua(skill_id, skill_patch, language, lang="en"):
     placeholder_matches = list(re.finditer(r"\{([^}:]+)(?::([^}]+))?\}", base_text))
     values = []
 
-    for i, match in enumerate(placeholder_matches):
+    for match in placeholder_matches:
         key = match.group(1).strip()
         raw_val = match.group(2)
 

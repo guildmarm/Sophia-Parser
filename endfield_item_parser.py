@@ -903,7 +903,7 @@ with open(FORMULAS_OUTPUT, "w", encoding="utf-8") as out:
 
         formula_append = ""
         if item_id in item_list.ITEM_LIST or item_data.get("type") == 47:
-            formula_append = f" (Formula)"
+            formula_append = " (Formula)"
 
         out.write(f"""{{{{-start-}}}}
 '''{info.name_clean}{formula_append}'''
@@ -994,13 +994,13 @@ with open(PROFILE_OUTPUT, "w", encoding="utf-8") as out:
         profile_append = ""
         profile_type = ""
         if item_data.get("type") == 66:
-            profile_append = f" (Portrait)"
+            profile_append = " (Portrait)"
             profile_type = "Portrait"
         elif item_data.get("type") == 67:
-            profile_append = f" (Frame)"
+            profile_append = " (Frame)"
             profile_type = "Portrait Frame"
         elif item_data.get("type") == 68:
-            profile_append = f" (Theme)"
+            profile_append = " (Theme)"
             profile_type = "Profile Theme"
 
         out.write(f"""{{{{-start-}}}}

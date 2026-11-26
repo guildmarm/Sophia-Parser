@@ -5,7 +5,6 @@ import lib.game_files as game_files
 import lib.constants as const
 import time
 import os
-import re
 import requests
 import mwparserfromhell
 from mwcleric.wikigg_client import WikiggClient

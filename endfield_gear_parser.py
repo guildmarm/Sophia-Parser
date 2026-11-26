@@ -72,7 +72,7 @@ with open(GEAR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         set_effect_formatted = format_text.efdb_format(set_effect)
         gear_setname = f"{gear_set}" if gear_set else ""
         gear_set_template = f"{{{{Gear Set|{gear_set}}}}}" if gear_set else ""
-        gear_set_section = f"==Set Items==" if gear_set else ""
+        gear_set_section = "==Set Items==" if gear_set else ""
 
         # Gear base and artificed stats
         (gear_def, gear_pstat, gear_pvalue, p_enhanced, gear_sstat, gear_svalue, s_enhanced, gear_tstat, gear_tvalue, t_enhanced) = gear.resolve_gear_attributes_sections(gear_data, attribute_filter, language)
@@ -153,7 +153,7 @@ with open(GEAR_IMAGE_ICON_OUTPUT, "w", encoding="utf-8") as out:
 
 # Make that sausage AGAIN (This is for the Gear Set template)
 with open(GEAR_SET_TEMPLATE_OUTPUT, "w", encoding="utf-8") as out:
-        out.write(f"""{{{{-start-}}}}
+    out.write(f"""{{{{-start-}}}}
 '''Template:Gear Set'''
 <includeonly>
 {{| width="100%" class="wikitable" cellpadding="5" style="margin-top:0; font-size:16px; border-style: hidden;"
@@ -168,7 +168,7 @@ with open(GEAR_SET_TEMPLATE_OUTPUT, "w", encoding="utf-8") as out:
 
 # Make that sausage YET AGAIN (This is for the Gear Nav template)
 with open(GEAR_NAV_TEMPLATE_OUTPUT, "w", encoding="utf-8") as out:
-        out.write(f"""{{{{-start-}}}}
+    out.write(f"""{{{{-start-}}}}
 '''Template:Gears'''
 <onlyinclude>{{{{Navbox
 | Title = Gear

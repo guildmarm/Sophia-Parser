@@ -1,10 +1,8 @@
-from lib.io import load_json
-from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS, DIALOGUE_TYPE
-from lib.format_text import module_format, efdb_format
+from lib.constants import ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, DIALOGUE_TYPE
+from lib.format_text import efdb_format
 import lib.general as general
 from collections import OrderedDict, defaultdict
 import math
-import html
 import re
 
 def operator_stats_truncate(value, decimals=3):
@@ -1143,6 +1141,7 @@ def operator_base_skills(operator_id, char_growth, base_skill, language, lang="e
 
             room_type = s_data.get("roomType")
             facility_name = ""
+            facility_name_alt = ""
             if room_type is not None:
                 facility_name = SPACESHIP_ROOM_TYPE.get(str(room_type)) or SPACESHIP_ROOM_TYPE.get(room_type, "")
                 facility_name_alt = SPACESHIP_ROOM_TYPE_ALT.get(str(room_type)) or SPACESHIP_ROOM_TYPE_ALT.get(room_type, "")
