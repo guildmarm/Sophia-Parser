@@ -85,8 +85,10 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 
         # Append the ID if there are duplicates but just the last part of it
         enemy_name, enemy_name_clean, enemy_name_image, enemy_alternate_text = enemy.resolve_enemy_names(enemy_id, enemy_name, enemy_name_clean, enemy_name_image, enemy_name_counts, duplicate_name_map)
+        operator_tab = ""
         if enemy_name_clean in operator_names:
             enemy_name_clean = f"{enemy_name_clean}/Enemy"
+            operator_tab = "{{Operator tab}}\n"
             print(f"{enemy_id} shares a name with an operator, writing to {enemy_name_clean}")
         cn_name = general.resolve_text(language["cn"], name_id)
         tc_name = general.resolve_text(language["tc"], name_id)
@@ -102,7 +104,7 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         wiki_trivia = ""
         wiki_references = ""
         wiki_enemy_tab = ""
-        wiki_params = {p: "" for p in ['attack', 'damage', 'base', 'upgrade']}
+        wiki_params = {p: "" for p in ['attack', 'damage', 'base', 'upgrade', 'sortId']}
 
         wikitext = fetch_wikitext(enemy_name_clean)
         if wikitext is not None:
@@ -155,10 +157,12 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         if wiki_references:
             optional_sections += f"==References==\n{wiki_references}\n\n"
 
+        sortid_line = f"\n|sortId = {wiki_params['sortId']}" if wiki_params['sortId'] else ""
+
         # Output
         out.write(f"""{{{{-start-}}}}
 '''{enemy_name_clean}'''
-{wiki_enemy_tab}{{{{Enemy infobox
+{operator_tab}{wiki_enemy_tab}{{{{Enemy infobox
 |name = {enemy_name}
 |image = {enemy_name_image}_sprite.png
 |filename = {enemy_id}
@@ -173,7 +177,8 @@ with open(ENEMY_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |attack = {wiki_params['attack']}
 |damage = {wiki_params['damage']}
 |base = {wiki_params['base']}
-|upgrade = {wiki_params['upgrade']}}}}}
+|upgrade = {wiki_params['upgrade']}{sortid_line}
+}}}}
 '''{enemy_name}''' is {enemy_article} [[{enemy_class} enemy]] in ''[[Arknights: Endfield]]''.{enemy_alternate_text}
 
 {{{{Enemy description|{enemy_desc}}}}}

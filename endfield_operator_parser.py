@@ -86,7 +86,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_name_clean = general.sanitize_name(operator_name)
 
         # mw.cleric input
-        wiki_params = {p: "" for p in ['fullname', 'fileno', 'theme', 'illustrator', 'jpcv', 'cncv', 'encv', 'krcv', 'matskill', 'matstats', 'headhunting', 'welfare']}
+        wiki_params = {p: "" for p in ['fullname', 'realname', 'fileno', 'theme', 'illustrator', 'jpcv', 'cncv', 'encv', 'krcv', 'matskill', 'matstats', 'headhunting', 'welfare']}
         wiki_skills = {}
         wiki_talents = {}
         wiki_intro = ""
@@ -169,7 +169,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
         operator_upgrade_items = operator.get_operator_upgrade_items(operator_id, char_growth, item_table, language)
 
         # Operator skills
-        operator_combat_skills = operator.get_operator_combat_skills(operator_id, char_growth, skill_patch, language, weapon, wiki_skills)
+        operator_combat_skills = operator.get_operator_combat_skills(operator_id, char_growth, skill_patch, potential_effect, language, weapon, wiki_skills)
         operator_skill_items = operator.get_operator_skill_items(operator_id, char_growth, item_table, language)
 
         # Operator Talents and Base Skills
@@ -209,6 +209,15 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
             wiki_media = get_wiki_section(gallery_wikitext, "Media")
             wiki_misc = get_wiki_section(gallery_wikitext, "Miscellaneous")
 
+        wiki_dialogue_extras = ""
+        dialogue_wikitext = fetch_wikitext(f"{operator_name_clean}/Dialogue")
+        if dialogue_wikitext is not None:
+            extras = get_wiki_section(dialogue_wikitext, "Extras")
+            if extras:
+                wiki_dialogue_extras = f"\n\n==Extras==\n{extras}"
+
+        realname_line = f"|realname = {wiki_params['realname']}\n" if wiki_params['realname'] else ""
+
         # Output
         out.write(f"""{{{{-start-}}}}
 '''{operator_name_clean}'''
@@ -235,7 +244,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 |spname = {sp_name}
 |runame = {ru_name}
 |fullname = {wiki_params['fullname']}
-|fileno = {wiki_params['fileno']}
+{realname_line}|fileno = {wiki_params['fileno']}
 |theme = {wiki_params['theme']}
 |illustrator = {wiki_params['illustrator']}
 |jpcv = {wiki_params['jpcv']}
@@ -311,7 +320,7 @@ with open(OPERATOR_PAGE_OUTPUT, "w", encoding="utf-8") as out:
 {{{{Operator tab}}}}
 {dialogue_open}{{{{Operator dialogue head}}}}
 {operator_dialogue}
-{{{{Table end}}}}{dialogue_close}
+{{{{Table end}}}}{dialogue_close}{wiki_dialogue_extras}
 
 {{{{-stop-}}}}
 

@@ -90,6 +90,10 @@ class GeneralItemInfo:
                 "gas_water": " (Aquagen)",
                 "gas_xiranite": " (Xiragen Gas)",
                 "gas_xiranite_enr": " (Heavy Xiragen Gas)",
+                "gas_copper_bright_clear": " (Clean Lucidolite Gas)",
+                "gas_copper_bright_turbid": " (Turbid Lucidolite Gas)",
+                "gas_copper_enr_heng": " (Equprium Gas)",
+                "gas_xiranite_enr_heng": " (Equiragen)",
             }
             
             for key, val in sorted(suffix_map.items(), key=lambda kv: len(kv[0]), reverse=True):
