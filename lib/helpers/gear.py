@@ -1,10 +1,5 @@
-from lib.io import load_json
-from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS
-from lib.format_text import module_format, efdb_format
+from lib.constants import ATTRIBUTE_TYPE
 import lib.general as general
-from collections import OrderedDict, defaultdict
-import math
-import html
 import re
 
 def get_gear_part_type(equip_data):
@@ -127,7 +122,7 @@ def resolve_gear_set_and_effect(gear_id, equip_suit, skill_patch, language, lang
     gear_set = ""
     set_effect = ""
 
-    for suit_key, suit_data in equip_suit.items():
+    for suit_data in equip_suit.values():
         equip_list = suit_data.get("equipList", [])
         if gear_id not in equip_list:
             continue

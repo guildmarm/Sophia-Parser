@@ -1,11 +1,8 @@
-from lib.io import load_json
-from lib.constants import LANGUAGE_FILES, ATTRIBUTE_TYPE, ATTRIBUTE_TYPE_ALT, ATTRIBUTE_TYPE_RAW, TARGET_LEVELS, SPACESHIP_ROOM_TYPE, SPACESHIP_ROOM_TYPE_ALT, TARGET_LEVELS, BASE_DIR, ITEM_TYPE_NAME
-from lib.format_text import module_format, efdb_format
+from lib.constants import BASE_DIR, ITEM_TYPE_NAME
+from lib.format_text import efdb_format
 import lib.general as general
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from datetime import datetime
-import math
-import html
 import re
 import os
 
