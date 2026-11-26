@@ -326,6 +326,15 @@ LEVEL_LOCATION = {
     "map02_lv005": "Test Area",
     "map02_lv006": "Sword Vault Dale",
     "map02_lv007": "North Wuling Exclusion Zone",
+    "map02_lv008": "Snowy Forest",
+    "map02_lv009": "Suiming"
+}
+
+REGION_NAME = {
+    "map01": "Valley IV",
+    "map02": "Wuling",
+    "domain_1": "Valley IV",
+    "domain_2": "Wuling",
 }
 
 DIALOGUE_TYPE = {
@@ -405,4 +414,27 @@ DIALOGUE_TYPE = {
     "Ultimate 1": 75,
     "Ultimate 2": 76,
     "Ultimate 3": 77,
+}
+
+INVESTIGATION_ICONS = {
+    0: "Investigation_Icon_T1.png",
+    1: "Investigation_Icon_T2.png",
+}
+
+FINDINGS_WIKI_ICONS = {
+    "prts_general_pic": "Finding_Picture",
+    "prts_read_appliance": "Finding_Appliance",
+    "prts_listen_phonecall": "Finding_Appliance",
+    "prts_read_document": "Finding_Document",
+    "prts_read_electronicscreen": "Finding_Electronic_Screen",
+    "prts_read_expensivebook": "Finding_Expensive_Book",
+    "prts_read_file": "Finding_File",
+    "prts_read_letter": "Finding_Letter",
+    "prts_read_news": "Finding_News",
+    "prts_read_note": "Finding_Note",
+    "prts_read_notebook": "Finding_Notebook",
+    "prts_read_oldbook": "Finding_Old_Book",
+    "prts_read_pad": "Finding_Read_Pad",
+    "prts_listen_record": "Finding_Listen_Record",
+    "prts_listen_heart": "Finding_Audio_Sample",
 }

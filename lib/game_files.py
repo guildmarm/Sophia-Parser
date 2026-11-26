@@ -48,6 +48,12 @@ RADIO_TABLE = "RadioTable.json"
 MISSION_TABLE = "MissionTable.json"
 MISSION_TYPE_INFO = "MissionTypeInfoTable.json"
 REC_WEAPON = "CharWpnRecommendTable.json"
+FINDING_TEXT_TABLE = "RichContentTable.json"
+FINDING_SINGLE = "PrtsAllItem.json"
+FINDING_GROUP = "PrtsFirstLv.json"
+FINDING_CATEGORY = "PrtsCategory.json"
+INVESTIGATE_TABLE = "PrtsInvestigate.json"
+INVESTIGATE_COMMENT_TABLE = "PrtsNote.json"
 PICTURE_TABLE = "PictureTable.json"
 
 
@@ -100,5 +106,11 @@ def build_paths(input_dir: str) -> dict[str, str]:
         "mission_table": os.path.join(input_dir, MISSION_TABLE),
         "mission_type_info": os.path.join(input_dir, MISSION_TYPE_INFO),
         "rec_weapon": os.path.join(input_dir, REC_WEAPON),
+        "finding_text_table": os.path.join(input_dir, FINDING_TEXT_TABLE),
+        "finding_single": os.path.join(input_dir, FINDING_SINGLE),
+        "finding_group": os.path.join(input_dir, FINDING_GROUP),
+        "finding_category": os.path.join(input_dir, FINDING_CATEGORY),
+        "investigate_table": os.path.join(input_dir, INVESTIGATE_TABLE),
+        "investigate_comment_table": os.path.join(input_dir, INVESTIGATE_COMMENT_TABLE),
         "picture_table": os.path.join(input_dir, PICTURE_TABLE),
     }
