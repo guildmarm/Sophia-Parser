@@ -4,6 +4,7 @@ import re
 BA_VUP = re.compile(r"<@ba\.vup>(.*?)</>")
 BA_POISE = re.compile(r"<@ba\.poise>(.*?)</>")
 BA_KEY = re.compile(r"<@ba\.key>(.*?)</>")
+GD_KEY = re.compile(r"<@gd\.key>(.*?)</>")
 BA_HEAL = re.compile(r"<@ba\.heal>(.*?)</>")
 BA_INFO = re.compile(r"<@ba\.info>(.*?)</>")
 BA_PD = re.compile(r"<@ba\.pd>(.*?)</>") # Physical Damage
@@ -93,6 +94,7 @@ def efdb_format(text: str) -> str:
     text = BA_VUP.sub(r"{{Color|\1|1d}}", text)
     text = BA_POISE.sub(r"{{Color|\1|2}}", text)
     text = BA_KEY.sub(r"{{Color|\1|7}}", text)
+    text = GD_KEY.sub(r"{{Color|\1|7}}", text)
     text = BA_HEAL.sub(r"{{Color|\1|1c}}", text)
     text = BA_INFO.sub(r"{{Color|\1|9}}", text)
     text = BA_PD.sub(r"{{Color|\1|1}}", text) # Physical Damage
@@ -246,6 +248,7 @@ def module_format(text: str) -> str:
     text = BA_VUP.sub(r"<blue>\1</span>", text)
     text = BA_POISE.sub(r"<stagger>\1</span>", text)
     text = BA_KEY.sub(r"<key>\1</span>", text)
+    text = GD_KEY.sub(r"<key>\1</span>", text)
     text = BA_HEAL.sub(r"<green>\1</span>", text)
     text = BA_INFO.sub(r"<grey>\1</span>", text)
     #text = BA_PD.sub(r"{{Color|\1|1}}", text) # Physical Damage

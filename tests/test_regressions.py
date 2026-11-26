@@ -1,3 +1,4 @@
+import difflib
 from collections import Counter
 import lib.general as general
 import lib.constants as const
@@ -36,7 +37,9 @@ def test_enemy_resist_falls_back_to_offset():
 def test_dialogue_titles_still_exist_in_game_text(table, en, report):
     titles = {general.resolve_text(en, v.get("voiceTitle", {}).get("id")).strip()
               for op in table("character_table").values() for v in op.get("profileVoice", [])}
-    report("DIALOGUE_TYPE keys no longer in game text", set(const.DIALOGUE_TYPE) - titles)
+    missing = set(const.DIALOGUE_TYPE) - titles
+    report("DIALOGUE_TYPE keys no longer in game text (-> closest current title)",
+           [f"{k} -> {(difflib.get_close_matches(k, titles, n=1, cutoff=0.6) or [''])[0]}" for k in sorted(missing)])
 
 
 def test_item_list_has_no_duplicates(report):

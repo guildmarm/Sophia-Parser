@@ -445,7 +445,7 @@ def get_operator_upgrade_items(operator_id, char_growth, item_table, language, l
 |e3 = {results['e3']}
 |e4 = {results['e4']}"""
 
-def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, weapon, wiki_skills={}, lang="en"):
+def get_operator_combat_skills(operator_id, char_growth, skill_patch, potential_effect, language, weapon, wiki_skills={}, lang="en"):
     text_table = language[lang]
     cdata = char_growth.get(operator_id)
     if not cdata or not isinstance(cdata, dict):
@@ -502,8 +502,20 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
                         if value != "": stat_groups[group_key]["values"].append(value)
         return stat_groups
 
-    def extract_cost_or_cooldown(skill_ids, s_key):
+    def conditional_cooldown_delta(skill_ids, condition):
+        if not condition:
+            return 0
+        delta = 0
+        for effect_key in sorted(k for k in potential_effect if k.startswith(f"{operator_id}_talent")):
+            for data in potential_effect[effect_key].get("dataList", []):
+                mod = data.get("skillParamModifier") or {}
+                if condition in (data.get("activeCondition") or []) and mod.get("skillId") in skill_ids and mod.get("paramType") == 4 and mod.get("modifyType") == 1:
+                    delta = mod.get("paramValue", 0)
+        return delta
+
+    def extract_cost_or_cooldown(skill_ids, s_key, condition=None):
         values, label = [], None
+        cd_delta = conditional_cooldown_delta(skill_ids, condition) if s_key == "ComboSkill" else 0
         for s_id in skill_ids:
             entry = skill_patch.get(s_id)
             if not entry: continue
@@ -516,7 +528,7 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
                     cost = bundle.get("costValue", 0)
                     if cost != 0: label, values = "Ultimate Energy Cost", values + [str(cost)]
                 elif s_key == "ComboSkill" and "coolDown" in bundle:
-                    label, values = "Cooldown", values + [str(bundle.get("coolDown", 0))]
+                    label, values = "Cooldown", values + [str(bundle.get("coolDown", 0) + cd_delta)]
         return (label, values) if label and values else None
 
     operator_name = cdata.get("engName", operator_id)
@@ -616,14 +628,14 @@ def get_operator_combat_skills(operator_id, char_growth, skill_patch, language, 
             desc_text = desc_text.replace("\n", "<br />")
 
             stat_lines, idx = [], 1
-            cost_line = extract_cost_or_cooldown(skill_ids, s_key)
+            active_condition = skill.get(f"conditionId{pass_num}", "") if pass_num is not None else None
+            cost_line = extract_cost_or_cooldown(skill_ids, s_key, active_condition)
             if cost_line:
                 l, v = cost_line
                 stat_lines.append(f"|stat{idx}= {l}, {', '.join(v)}")
                 idx += 1
 
             stat_groups = extract_skill_stats(skill_ids)
-            active_condition = skill.get(f"conditionId{pass_num}", "") if pass_num is not None else None
             for (condition_id, _s_id, _pos), group in stat_groups.items():
                 if active_condition is not None and condition_id and condition_id != active_condition:
                     continue
@@ -1347,7 +1359,7 @@ def get_operator_recommended_weapons(operator_id, rec_weapon, weapon_basic, lang
 def get_operator_snapshots(operator_id, picture_table, item_table, language, lang="en"):
     pics = []
     for pic_id, pic in picture_table.items():
-        id_match = re.match(r"pic_(\d+)_(.+?)(?:_ex\d+)?$", pic_id)
+        id_match = re.match(r"pic_(\d+)_(?:ex\d+_)?(.+?)(?:_ex\d+)?$", pic_id)
         if not id_match or id_match.group(2) != operator_id:
             continue
         pics.append((int(id_match.group(1)), pic_id, pic))
@@ -1355,6 +1367,8 @@ def get_operator_snapshots(operator_id, picture_table, item_table, language, lan
     pics.sort(key=lambda x: (x[0], "_ex" in x[1]))
 
     snapshot_blocks = []
+    profile_item = item_table.get(f"business_card_topic_{operator_id}", {})
+    profile_title = general.resolve_text(language[lang], (profile_item.get("name") or {}).get("id")) if profile_item else ""
     for order, pic_id, pic in pics:
         title = general.resolve_text(language[lang], (pic.get("name") or {}).get("id"))
         illust = general.resolve_text(language[lang], (pic.get("author") or {}).get("id"))
@@ -1366,6 +1380,8 @@ def get_operator_snapshots(operator_id, picture_table, item_table, language, lan
         if ex_match:
             ver = f"\n|ver = {int(ex_match.group(1))}"
 
-        snapshot_blocks.append(f"{{{{Operator snapshot\n|title = {title}\n|desc = {desc}\n|ilust = {illust}\n|pot = {order}{ver}}}}}")
+        profile = "\n|profile = True" if profile_title and title == profile_title else ""
+
+        snapshot_blocks.append(f"{{{{Operator snapshot\n|title = {title}\n|desc = {desc}\n|ilust = {illust}\n|pot = {order}{ver}{profile}}}}}")
 
     return "\n".join(snapshot_blocks)

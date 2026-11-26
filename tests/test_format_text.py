@@ -89,7 +89,7 @@ def test_operator_text_is_fully_formatted(table, en, report, monkeypatch):
         weapon_type = const.WEAPON_TYPE.get(data.get("weaponType"), "")
         main_attr = const.ATTRIBUTE_TYPE.get(data.get("mainAttrType"), "")
         calls = {
-            "skills": lambda: operator.get_operator_combat_skills(oid, growth, table("skill_patch"), language, weapon_type),
+            "skills": lambda: operator.get_operator_combat_skills(oid, growth, table("skill_patch"), table("potential_effect"), language, weapon_type),
             "talents": lambda: operator.operator_passive_talents(oid, name, growth, table("potential_effect"), language, table("pot_effect_enums")),
             "potentials": lambda: operator.get_operator_potentials(oid, table("character_potential"), table("potential_effect"), language, table("pot_effect_enums")),
             "main attribute talent": lambda: operator.main_attribute_talent(oid, growth, language, main_attr),
